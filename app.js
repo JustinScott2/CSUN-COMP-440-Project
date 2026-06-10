@@ -1,99 +1,131 @@
-import { useState } from 'react';
+function Form() {
+  const State = {
+    menu: 0,
+    question: 1,
+    correctAnswer: 2,
+    wrongAnswer: 3,
+    error: 4
 
-export default function Form() {
-    const State = {
-        menu: 0,
-        question: 1,
-        answer: 2
-    };
-    const [activeIndex, setActiveIndex] = useState(State.menu);
-    return (
+  };
+
+  const [activeIndex, setActiveIndex] = React.useState(State.menu);
+
+  //TODO add mechanism to save the question text and answer text to a higher level, so that it can be used in the correct/wrong answer panels
+  //TODO add a mechanism to save the user's score for next time
+
+  switch (activeIndex) {
+  case State.menu:
+        return (
         <>
-        <h2>Almaty, Kazakhstan</h2>
-
-        <Panel
-            title="About"
-            isActive={activeIndex === State.menu}
-            onShow={() => setActiveIndex(State.menu)}
-        >
-            With a population of about 2 million, Almaty is Kazakhstan's largest city. From 1929 to 1997, it was its capital city.
-        </Panel>
-
-        <Panel
-            title="Etymology"
-            isActive={activeIndex === State.question}
-            onShow={() => setActiveIndex(State.question)}
-        >
-            The name comes from <span lang="kk-KZ">алма</span>, the Kazakh word for "apple" and is often translated as "full of apples". In fact, the region surrounding Almaty is thought to be the ancestral home of the apple, and the wild <i lang="la">Malus sieversii</i> is considered a likely candidate for the ancestor of the modern domestic apple.
-        </Panel>
-        
+        <ControlPanel></ControlPanel>
+        <MenuPanel></MenuPanel>
         </>
     );
+    break;
+  case State.question:
+        return (
+        <>
+        <ControlPanel></ControlPanel>
+        <QuestionPanel></QuestionPanel>
+        </>)
+    break;
+    case State.correctAnswer:
+        return (        
+        <>
+        <ControlPanel></ControlPanel>
+        <CorrectAnswerPanel></CorrectAnswerPanel>
+        </>);
+    break;
+    case State.wrongAnswer:
+        return (
+        <>
+        <ControlPanel></ControlPanel>
+        <WrongAnswerPanel></WrongAnswerPanel>
+        </>
+        );
+    break;
+  default:
+        return (
+        <>
+        <ControlPanel></ControlPanel>
+        <h2>Error: no matching state</h2>
+        </>)
+    break;
+}
+
+    /*function Panel({ title, children, isActive, onShow }) {
+        return (
+            <section className="panel">
+            <h3>{title}</h3>
+            {isActive ? (
+                <p>{children}</p>
+            ) : (
+                <button onClick={onShow}>Show</button>
+            )}
+            </section>
+        );
+    }*/
+
+    function ControlPanel() {
+        return (
+            <section className="control-panel">
+                {activeIndex !== State.menu && (
+                    <button onClick={() => setActiveIndex(State.menu)}>Return</button>
+                )}
+                <button onClick={() => setActiveIndex(State.error)}>Settings</button>
+            </section>
+        );
     }
 
-    function Panel({
-    title,
-    children,
-    isActive,
-    onShow
-    }) {
-    return (
-        <section className="panel">
-        <h3>{title}</h3>
-        {isActive ? (
-            <p>{children}</p>
-        ) : (
-            <button onClick={onShow}>
-            Show
-            </button>
-        )}
-        </section>
-    );
+    function MenuPanel() {
+        return (
+            <section className="menu-panel">
+                <h2>Menu</h2>
+                <button onClick={() => setActiveIndex(State.question)}>PLAY!</button>
+                <button onClick={() => setActiveIndex(State.error)}>My Words</button>
+                <button onClick={() => setActiveIndex(State.error)}>Daily Challenge</button>
+            </section>
+        );
+    }
+
+    //TODO save the question text and answer text to a higher level, so that it can be used in the correct/wrong answer panels
+    //TODO add a funtion that generates a new question 
+    function QuestionPanel() {
+        return (
+            <section className="question-panel">
+
+                <h2>Question Text</h2>
+                <button onClick={() => setActiveIndex(State.correctAnswer)}>correct</button>
+                <button onClick={() => setActiveIndex(State.wrongAnswer)}>wrong</button>
+                <button onClick={() => setActiveIndex(State.wrongAnswer)}>wrong</button>
+                <button onClick={() => setActiveIndex(State.wrongAnswer)}>wrong</button>
+            </section>
+        );
+    }
+
+    //TODO show the correct answer in the correct/wrong answer panels
+    //TODO add a mechanism to save the user's score for next time, and show it in the correct/wrong answer panels
+    function CorrectAnswerPanel() {
+        return (
+            <section className="correct-answer-panel">
+                <h1>Question Text</h1>
+                <h2>Correct Answer!</h2>
+                <h3>Correct Answer Text</h3>
+                <button onClick={() => setActiveIndex(State.question)}>Next Word?</button>
+            </section>
+        );
+    }
+
+    //TODO show the correct answer in the correct/wrong answer panels
+    //TODO add a mechanism to save the user's score for next time, and show it in the correct/wrong answer panels
+    function WrongAnswerPanel() {
+        return (
+            <section className="wrong-answer-panel">
+                <h1>Question Text</h1>
+                <h2>Wrong Answer!</h2>
+                <h3>Correct Answer Text</h3>
+                <button onClick={() => setActiveIndex(State.question)}>Next Word?</button>
+            </section>
+        );
+    }
 }
-
-
-/*import { useState } from 'react';
-
-export default function Accordion() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  return (
-    <>
-      <h2>Almaty, Kazakhstan</h2>
-      <Panel
-        title="About"
-        isActive={activeIndex === 0}
-        onShow={() => setActiveIndex(0)}
-      >
-        With a population of about 2 million, Almaty is Kazakhstan's largest city. From 1929 to 1997, it was its capital city.
-      </Panel>
-      <Panel
-        title="Etymology"
-        isActive={activeIndex === 1}
-        onShow={() => setActiveIndex(1)}
-      >
-        The name comes from <span lang="kk-KZ">алма</span>, the Kazakh word for "apple" and is often translated as "full of apples". In fact, the region surrounding Almaty is thought to be the ancestral home of the apple, and the wild <i lang="la">Malus sieversii</i> is considered a likely candidate for the ancestor of the modern domestic apple.
-      </Panel>
-    </>
-  );
-}
-
-function Panel({
-  title,
-  children,
-  isActive,
-  onShow
-}) {
-  return (
-    <section className="panel">
-      <h3>{title}</h3>
-      {isActive ? (
-        <p>{children}</p>
-      ) : (
-        <button onClick={onShow}>
-          Show
-        </button>
-      )}
-    </section>
-  );
-}
-*/

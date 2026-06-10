@@ -11,6 +11,7 @@
     </head>
     <body>
         <!-- add a container, where you want to include react components -->
+        <div id="injected-react-controls"></div>
         <div id="injected-react-content"></div>
 
         <!-- import the react libraray -->
@@ -18,28 +19,19 @@
         <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-        <!-- setup react root component other components -->
+        <!-- setup react root component and render the app -->
         <script type="text/babel" src="app.js"></script>
-
         <script type="text/babel">
-            class RootComponent extends React.Component {
-                render(){
-                    return <div>
-                        <MyComponent />
-                    </div>;
-                }
-            }
-      
-            class MyComponent extends React.Component {
-                render(){
-                    return (<div>This is a simple component</div>);
-                }
-            }
-
-            const domContainer = document.querySelector('#injected-react-content');
-            ReactDOM.render( React.createElement(RootComponent), domContainer );
+            ReactDOM.render(<Form />, document.getElementById('injected-react-content'));
         </script>
   <!--TODO V  
+
+
+
+
+
+
+
         <nav class="navbar"></nav>
             <div class="navbar__container">
                 <a href="/" id="navbar__logo">NEXT</a>
