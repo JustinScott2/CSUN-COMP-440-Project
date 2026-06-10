@@ -1,0 +1,8 @@
+Bibloguesser
+Justin Scott 
+date: 8/15/25
+
+Concept: Website that takes the English dictionary and makes a guessing game where the player attempts to match a word with its correct definition.
+
+
+
