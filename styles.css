@@ -8,7 +8,3 @@ html, body, #injected-react-content {
 body {
   min-height: 100vh;
 }
-
-h1 {
-  color: red;
-}

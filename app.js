@@ -2,15 +2,48 @@ class QnA{
     static #question;
     static #answers;
     static generateQuestion(){
-        QnA.#question = "temp question text";
-        QnA.#answers = ["temp correct answer", "temp wrong answer 1", "temp wrong answer 2", "temp wrong answer 3"]; 
+        this.tempGenerateQuestion();
     }
+    
+    static tempGenerateQuestion(){
+        let randomNum = Math.floor(Math.random()*4);
+        switch (randomNum) {
+        case 0:
+            QnA.#question = "What is an apple?";
+            QnA.#answers = ["red fruit", "green fruit", "blue fruit", "purple fruit"]
+        break; 
+        case 1:
+            QnA.#question = "What is an oubliette?";
+            QnA.#answers = ["An oubliette is a secret, underground dungeon in a castle or fortress designed so that the only entrance or exit is a trap door in the ceiling",
+                            "An oubliette is a broad, scarf-like neckband worn by men, tucked into the collar of a shirt.",
+                            "Oubliette refers to a genus of drought-tolerant shrubs, trees, and plants in the asparagus family native to the Americas.",
+                            "The oubliette is a smooth, progressive ballroom dance characterized by long, continuous, flowing movements across the floor."];
+        break;
+        case 2:
+            QnA.#question = "A horse is a ?";
+            QnA.#answers = ["mammal",
+                            "bird",
+                            "fish",
+                            "dinosaur"]
+        break;
+        case 3:
+            QnA.#question = "What does Cantankerous mean?";
+            QnA.#answers = ["Cantankerous describes someone who is bad-tempered, argumentative, uncooperative, and difficult to deal with.",
+                            "Cantankerous describes something related to or affected by cancer",
+                            "Cantankerous describes making a loud and confused noise",
+                            "Cantankerous describes making a continuous loud banging or ringing sound"]
+        break;
+        }
+    }
+
     static getQuestion(){
         return QnA.#question;
     }
+
     static getAnswers(){
         return QnA.#answers?[...QnA.#answers] : [];
     }
+
     static isCorrectAnswer(answer){
         return answer === QnA.#answers?.[0];
     }
@@ -41,6 +74,8 @@ function wrapAround(num, start, max){
     //TODO what is this? 
     appShell: {
       minHeight: '100vh',
+      maxHeight: '99%',
+      maxWidth: '99%',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -52,7 +87,8 @@ function wrapAround(num, start, max){
     //styles for control panel elements
     optionsPanel: {
       width: '100%',
-      minHeight: '50%',
+      maxWidth: '99%',
+      minHeight: '20%',
       display: 'flex',
       alignItems: 'center',
       padding: '0 16px',
@@ -68,6 +104,7 @@ function wrapAround(num, start, max){
         padding: '10px',
         fontSize: '1rem',
         marginLeft: 'auto',
+        marginTop: '10px'
     },
 
     backButton: {
@@ -75,6 +112,7 @@ function wrapAround(num, start, max){
         get height() { return this.width; },
         get minWidth() { return this.width; },
         get minHeight() { return this.width; },
+        marginTop: '10px',
         padding: '10px',
         fontSize: '1rem',
     },
@@ -191,7 +229,7 @@ function Form() {
 
   return <div style={styles.appShell}>{content}</div>;
 
-  //TODO why does menupanel and control panel have to be in form? 
+  //TODO why does panel functs have to be in form? 
     function MenuPanel() {
         return (
             <section style={styles.menuPanel} className="menu-panel">
@@ -220,55 +258,46 @@ function Form() {
             </section>
         );
     }
-}
-
-    function giveQuestionValues(){
-        const container = {answers, onPressess};
-        localAnswers = QnA.getAnswers();
-        let randomNum = Math.floor(Math.random()*4);
-        for(let i = 0; i < 4; i++){
-            answers[wrapAround(i, randomNum, 3)] = localAnswers[i];
-            if(i === 0){
-                onPressess[wrapAround(i, randomNum, 3)] = (() => setActiveIndex(State.correctAnswer));
-            }
-            else{
-                onPressess[wrapAround(i, randomNum, 3)] = (() => setActiveIndex(State.wrongAnswer));
-            }
-        }
-        return container;
-    }
 
     //TODO save the question text and answer text to a higher level, so that it can be used in the correct/wrong answer panels
     //TODO add a funtion that generates a new question 
     function QuestionPanel() {
-        container = giveQuestionValues();
+        QnA.generateQuestion();
+        let questionContainer = QnA.getQuestion();
+        const buttonContainer = giveQuestionValues();
         return (
             <section style={styles.menuPanel} className="question-panel">
-                <h2 style={styles.title}>Question Text</h2>
+                <h2 style={styles.title}>{questionContainer}</h2>
 
                 <section style={{ display: 'flex', alignItems: 'center' }}>
-                    <button style={styles.gridButton} onClick={container.onPressess[0]}>container</button>
+                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[0]}>{buttonContainer.answers[0]}</button>
                     <div style = {{width: '10px'}}></div>
-                    <button style={styles.gridButton} onClick={container.onPressess[1]}>wrong</button>
+                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[1]}>{buttonContainer.answers[1]}</button>
                 </section>
 
                 <section style={{ display: 'flex', alignItems: 'center' }}>
-                    <button style={styles.gridButton} onClick={container.onPressess[2]}>wrong</button>
+                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[2]}>{buttonContainer.answers[2]}</button>
                     <div style = {{width: '10px'}}></div>
-                    <button style={styles.gridButton} onClick={container.onPressess[3]}>wrong</button>
+                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[3]}>{buttonContainer.answers[3]}</button>
                 </section>
             </section>
         );
     }
+
     //TODO show the correct answer in the correct/wrong answer panels
     //TODO add a mechanism to save the user's score for next time, and show it in the correct/wrong answer panels
     function CorrectAnswerPanel() {
         return (
             <section className="correct-answer-panel">
-                <h1>Question Text</h1>
-                <h2>Correct Answer!</h2>
-                <h3>Correct Answer Text</h3>
-                <button onClick={() => setActiveIndex(State.question)}>Next Word?</button>
+                <h1 style = {styles.title}>{QnA.getQuestion()}</h1>
+                <section style={{ display: 'flex', alignItems: 'center' }}>
+                    <h2>Correct Answer!</h2>
+                    <div style = {{width: '30px'}}></div>
+                    <h3>{QnA.getAnswers()[0]}</h3>
+                </section>
+                <section style={{ display: 'flex', alignItems: 'center' }}>
+                    <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>
+                </section>
             </section>
         );
     }
@@ -278,10 +307,34 @@ function Form() {
     function WrongAnswerPanel() {
         return (
             <section className="wrong-answer-panel">
-                <h1>Question Text</h1>
-                <h2>Wrong Answer!</h2>
-                <h3>Correct Answer Text</h3>
-                <button onClick={() => setActiveIndex(State.question)}>Next Word?</button>
+                <h1 style = {styles.title}>{QnA.getQuestion()}</h1>
+                <section style={{ display: 'flex', alignItems: 'center' }}>
+                    <h2>Wrong Answer!</h2>
+                    <div style = {{width: '30px'}}></div>
+                    <h3>{QnA.getAnswers()[0]}</h3>
+                </section>
+                <section style={{ display: 'flex', alignItems: 'center' }}>
+                    <button onClick={() => setActiveIndex(State.question)}>Next Word?</button>  
+                </section>
             </section>
         );
     }
+
+    function giveQuestionValues(){
+        const container = {answers: [], onPressess: []};
+        const localAnswers = QnA.getAnswers();
+        let randomNum = Math.floor(Math.random()*4);
+        for(let i = 0; i < 4; i++){
+            container.answers[wrapAround(i, randomNum, 4)] = localAnswers[i];
+            if(i === 0){
+                container.onPressess[wrapAround(i, randomNum, 4)] = (() => setActiveIndex(State.correctAnswer));
+            }
+            else{
+                container.onPressess[wrapAround(i, randomNum, 4)] = (() => setActiveIndex(State.wrongAnswer));
+            }
+        }
+        return container;
+    }
+}
+
+ 
