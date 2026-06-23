@@ -2,9 +2,9 @@
 <html lang="en">
     <head>
         <!--TODO V-->
-        <meta charset="UTF=8">
+        <meta charset="UTF-8">
         <!--TODO V-->
-        <meta name="viewport" content="width=device-width, height=device-height, inital-scale=1.8">
+        <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.8">
         <title>Bibloguesser - 0.1</title>
         <!--TODO V-->
         <link rel="stylesheet" href="styles.css">
@@ -16,37 +16,12 @@
         <!-- import the react libraray -->
         <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
         <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
 
         <!-- setup react root component and render the app -->
         <script type="text/babel" src="app.js"></script>
         <script type="text/babel">
-            ReactDOM.render(<Form />, document.getElementById('injected-react-content'));
+            ReactDOM.render(React.createElement(Form), document.getElementById('injected-react-content'));
         </script>
-  <!--TODO V  
-
-
-
-
-
-
-
-        <nav class="navbar"></nav>
-            <div class="navbar__container">
-                <a href="/" id="navbar__logo">NEXT</a>
-                <div class="navbar__toggle" id="moble-menu">
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                </div>
-                <ul class="navbar__menu">
-                    <li class="navbar__item">
-                        <a href="/" class="navbar__inks">
-                            Home
-                        </a>
-                    </li>
-                </ul>  
-            </div>
-        <h1>Testtext2_new</h1> -->
     </body>
 </html>
