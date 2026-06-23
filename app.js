@@ -1,51 +1,58 @@
+//TODO add privacy
 class QnA{
-    static #question;
-    static #answers;
+    static question = "";
+    static answers = [];
+  
     static generateQuestion(){
         this.tempGenerateQuestion();
     }
-    
+     
     static tempGenerateQuestion(){
         let randomNum = Math.floor(Math.random()*4);
         switch (randomNum) {
         case 0:
-            QnA.#question = "What is an apple?";
-            QnA.#answers = ["red fruit", "green fruit", "blue fruit", "purple fruit"]
+            QnA.question = "What is an apple?";
+            QnA.answers = ["red fruit", "green fruit", "blue fruit", "purple fruit"]
         break; 
         case 1:
-            QnA.#question = "What is an oubliette?";
-            QnA.#answers = ["An oubliette is a secret, underground dungeon in a castle or fortress designed so that the only entrance or exit is a trap door in the ceiling",
+            QnA.question = "What is an oubliette?";
+            QnA.answers = ["An oubliette is a secret, underground dungeon in a castle or fortress designed so that the only entrance or exit is a trap door in the ceiling",
                             "An oubliette is a broad, scarf-like neckband worn by men, tucked into the collar of a shirt.",
                             "Oubliette refers to a genus of drought-tolerant shrubs, trees, and plants in the asparagus family native to the Americas.",
                             "The oubliette is a smooth, progressive ballroom dance characterized by long, continuous, flowing movements across the floor."];
         break;
         case 2:
-            QnA.#question = "A horse is a ?";
-            QnA.#answers = ["mammal",
+            QnA.question = "A horse is a ?";
+            QnA.answers = ["mammal",
                             "bird",
                             "fish",
                             "dinosaur"]
         break;
         case 3:
-            QnA.#question = "What does Cantankerous mean?";
-            QnA.#answers = ["Cantankerous describes someone who is bad-tempered, argumentative, uncooperative, and difficult to deal with.",
+            QnA.question = "What does Cantankerous mean?";
+            QnA.answers = ["Cantankerous describes someone who is bad-tempered, argumentative, uncooperative, and difficult to deal with.",
                             "Cantankerous describes something related to or affected by cancer",
                             "Cantankerous describes making a loud and confused noise",
                             "Cantankerous describes making a continuous loud banging or ringing sound"]
         break;
         }
     }
-
+    
     static getQuestion(){
-        return QnA.#question;
+        return QnA.question;
     }
 
     static getAnswers(){
-        return QnA.#answers?[...QnA.#answers] : [];
+        return QnA.answers ? [...QnA.answers] : [];
     }
 
     static isCorrectAnswer(answer){
-        return answer === QnA.#answers?.[0];
+    try {
+        return answer === QnA.answers[0]; 
+    } catch (e) {
+        activeIndex = error;
+        return undefined;
+    }
     }
 }
 
@@ -190,47 +197,47 @@ function Form() {
   switch (activeIndex) {
   case State.menu:
         content = (
-        <>
+        <React.Fragment>
         <ControlPanel></ControlPanel>
         <MenuPanel></MenuPanel>
-        </>
+        </React.Fragment>
     );
     break;
   case State.question:
         content = (
-        <>
+        <React.Fragment>
         <ControlPanel></ControlPanel>
         <QuestionPanel></QuestionPanel>
-        </>)
+        </React.Fragment>)
     break;
     case State.correctAnswer:
         content = (        
-        <>
+        <React.Fragment>
         <ControlPanel></ControlPanel>
         <CorrectAnswerPanel></CorrectAnswerPanel>
-        </>);
+        </React.Fragment>);
     break;
     case State.wrongAnswer:
         content = (
-        <>
+        <React.Fragment>
         <ControlPanel></ControlPanel>
         <WrongAnswerPanel></WrongAnswerPanel>
-        </>
+        </React.Fragment>
         );
     break;
   default:
       content = (
-        <>
+        <React.Fragment>
           <ControlPanel />
           <h2>Error: no matching state</h2>
-        </>
+        </React.Fragment>
       );
   }
 
   return <div style={styles.appShell}>{content}</div>;
 
   //TODO why does panel functs have to be in form? 
-    function MenuPanel() {
+function MenuPanel() {
         return (
             <section style={styles.menuPanel} className="menu-panel">
                 <h2 style={styles.title}>Biblioguesser</h2>
@@ -258,7 +265,6 @@ function Form() {
             </section>
         );
     }
-
     //TODO save the question text and answer text to a higher level, so that it can be used in the correct/wrong answer panels
     //TODO add a funtion that generates a new question 
     function QuestionPanel() {
@@ -336,5 +342,3 @@ function Form() {
         return container;
     }
 }
-
- 
