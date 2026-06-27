@@ -1,12 +1,49 @@
+/*import initSqlJs from 'sql.js';
+const SQL = await initSqlJs({ locateFile: file => `https://js.org{file}` });
+const response = await fetch('/dictionary.db');
+const buf = await response.arrayBuffer();
+const db = new SQL.Database(new Uint8Array(buf));*/
+
+let errorText = "";
 //TODO add privacy
 class QnA{
     static question = "";
     static answers = [];
   
     static generateQuestion(){
-        this.tempGenerateQuestion();
+        this.tempGenerateSqlQuestion();
+        //this.tempGenerateQuestion();
     }
-     
+
+    static tempGenerateSqlQuestion(){
+        //QnA.question = "What is " + qestionHolder[0].values[0]+ "?";
+        //QnA.answers = ["Correct", "wrong", "wrong", "wrong"]
+
+        if (!window.db) {
+            errorText = "Error: Dictionary not found"
+            setActiveIndex(State.error);
+            return;
+        }
+
+        const tables = window.db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+        if (!tables.length || !tables[0].values.length) {
+            errorText = "Error: No table found in dictionary.db";
+            setActiveIndex(State.error);
+            return;
+        }
+        const tableName = tables[0].values[0][0];
+        const qestionHolder = window.db.exec('SELECT * FROM "' + tableName + '" WHERE rowid = abs(random()) % (SELECT count(*) FROM "' + tableName + '") + 1');
+        if (!qestionHolder.length || !qestionHolder[0].values.length) {
+            errorText = "Error: No data found in dictionary.db";
+            setActiveIndex(State.error);
+            return;
+        }
+
+        const row = qestionHolder[0].values[0];
+        QnA.question = `What is ${row[0]}?`;
+        QnA.answers = ["Correct", "Wrong", "Wrong", "Wrong"];
+    }
+
     static tempGenerateQuestion(){
         let randomNum = Math.floor(Math.random()*4);
         switch (randomNum) {
@@ -62,8 +99,37 @@ function wrapAround(num, start, max){
     }
     return num + start;
 }
+/*/new to review
+function queryDictionary(sql){
+    if (!window.dbPromise) {
+        return Promise.reject(new Error('Database is not initialized yet'));
+    }
+    return window.dbPromise.then(function(db){
+        return db.exec(sql);
+    });
+}
 
-  function pxStringHandler(pxVal, operation) {
+function getDictionaryTables(){
+    return queryDictionary("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
+        .then(function(result){
+            if (!result || !result[0] || !result[0].values) {
+                return [];
+            }
+            return result[0].values.map(function(row){ return row[0]; });
+        });
+}
+
+function getRandomRowFromTable(tableName){
+    return queryDictionary('SELECT * FROM "' + tableName + '" ORDER BY RANDOM() LIMIT 1;')
+        .then(function(result){
+            if (!result || !result[0] || !result[0].values || !result[0].values[0]) {
+                return null;
+            }
+            return result[0].values[0];
+        });
+}
+*///down to here
+function pxStringHandler(pxVal, operation) {
     const numVal = parseInt(pxVal, 10);
     let result = operation(numVal);
     return result + 'px';

@@ -17,7 +17,29 @@
         <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
         <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
         <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
-
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+        <script>
+            window.dbPromise = initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+            })
+            .then(SQL => fetch('dictionary.db')
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Failed to fetch dictionary.db: ' + res.status);
+                    }
+                    return res.arrayBuffer();
+                })
+                .then(buf => {
+                    window.SQL = SQL;
+                    window.db = new SQL.Database(new Uint8Array(buf));
+                    return window.db;
+                })
+            )
+            .catch(err => {
+                console.error('Failed to load dictionary.db', err);
+                throw err;
+            });
+        </script>
         <!-- setup react root component and render the app -->
         <script type="text/babel" src="app.js"></script>
         <script type="text/babel">
