@@ -2,14 +2,25 @@
 let errorText = "Error: no matching state";
 
 //TODO add privacy  TODO check if error catchers work
-//OnA is a class that holds the question, the possible answers, and the getting/setting functions for those fields.
+//OnA is a class that holds the question, the possible answers, words associated with incorect answers and the getting/setting functions for those fields.
+// index |   words           |  answers
+//     0 | word for question | def of question
+//     1 | word for 1        | def of w1
+//     2 | word for 2        | def of w2
+//     3 | word for 3        | def of w3
+
 class QnA{
-    static question = "";
+    //ex. What is an apple?
+    static question ="";
+    //ex. apple, orange, lime, lemon
+    static words = [];
+    //ex. red fruit, orange fruit, green fruit, yellow fruit
     static answers = [];
   
     //curent call to generate a question, will be reworked in the game modes update
-    static generateQuestion(){
-        this.tempGenerateSqlQuestion();
+    static async generateQuestion(){
+        await window.dbPromise; // Ensure the database is loaded before generating a question
+        await this.GenerateNounQuestion();
     }
 
     //pulls a random line from the db and adds the word to question field.
@@ -108,8 +119,9 @@ class QnA{
 
 // #region functions-tools
 //Loops the number from start to max
+//No longer needs to be a function but I don't want to replace all uses
 function wrapAround(num, start, max) {
-    return ((num + start - 1) % max) + 1;
+    return ((num + start) % max);
 }
 
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
@@ -363,14 +375,23 @@ function Form() {
 
     //QuestionPanel is the HTML for the QestionPanel state
     function QuestionPanel() {
-        //generates a new question
-        QnA.generateQuestion();
+        const [questionContainer, setQuestionContainer] = React.useState(QnA.getQuestion());
+        const [buttonContainer, setButtonContainer] = React.useState({
+            answers: ['', '', '', ''],
+            onPressess: [() => {}, () => {}, () => {}, () => {}]
+        });
 
-        //makes an object that holds the question
-        let questionContainer = QnA.getQuestion();
-
-        //makes an object that holds 2 arrays of 4, the answers and their associated buttions, where answers[0] is associated with onPresses[0]
-        const buttonContainer = giveQuestionValues();
+        React.useEffect(() => {
+            let mounted = true;
+            async function loadQuestion() {
+                await QnA.generateQuestion();
+                if (!mounted) return;
+                setQuestionContainer(QnA.getQuestion());
+                setButtonContainer(giveQuestionValues());
+            }
+            loadQuestion();
+            return () => { mounted = false; };
+        }, []);
         return (
             <section style={styles.menuPanel} className="question-panel">
 

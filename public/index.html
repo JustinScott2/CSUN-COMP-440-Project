@@ -9,6 +9,7 @@
         <!--TODO V-->
         <link rel="stylesheet" href="styles.css">
     </head>
+
     <body>
         <!-- add a container, where you want to include react components -->
         <div id="injected-react-content"></div>
@@ -17,6 +18,7 @@
         <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
         <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
         <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+
         <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
         <script>
             window.dbPromise = initSqlJs({
@@ -43,7 +45,12 @@
         <!-- setup react root component and render the app -->
         <script type="text/babel" src="app.js"></script>
         <script type="text/babel">
-            ReactDOM.render(React.createElement(Form), document.getElementById('injected-react-content'));
+            window.dbPromise
+                .then(() => ReactDOM.render(React.createElement(Form), document.getElementById('injected-react-content')))
+                .catch(err => {
+                    console.error('DB failed to load', err);
+                    ReactDOM.render(React.createElement(Form), document.getElementById('injected-react-content'));
+                });
         </script>
     </body>
 </html>
