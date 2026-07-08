@@ -63,6 +63,128 @@ class QnA{
         QnA.answers = [row[3], "Wrong", "Wrong", "Wrong"];
     }
 
+    static GenerateQuestionWInput(SQLSelection){
+
+        //if no db found, move to error state
+        if (!window.db) {
+            errorText = "Error: Dictionary not found"
+            //setActiveIndex(State.error);
+            console.log(errorText);
+            return;
+        }
+
+        //makes a list of tables in the doc that are not metadata, in this case it can only be the dictionary, but could cause issues if another table is added.
+        const tables = window.db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+        
+        //if the table has no length or has no values, move to error state.  This will not happen in current version but is good practice.
+        if (!tables.length || !tables[0].values.length) {
+            errorText = "Error: No table found in dictionary.db" + tables.length + " " + tables[0].values.length;
+            //setActiveIndex(State.error);
+            console.log(errorText);
+            return;
+        }
+
+        //extracts the name of the first table.  This my not work for multiple tables. 
+        const tableName = tables[0].values[0][0];
+
+        //question holder holds a random line selected from the previously discovered table.
+        let qestionHolder;
+        try {
+            // basic validation/sanitization for the incoming SQLSelection
+            if (typeof SQLSelection !== 'string' || !SQLSelection.trim()) {
+                SQLSelection = '1'; // always-true predicate if nothing provided
+            }
+            if (SQLSelection.includes(';')) {
+                throw new Error('SQLSelection contains disallowed characters');
+            }
+
+            // escape any double-quotes inside the table name
+            const safeTableName = tableName.replace(/"/g, '""');
+            const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
+            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} ORDER BY random() LIMIT 1`;
+            console.log('QnA: executing query ->', query);
+            qestionHolder = window.db.exec(query);
+        } catch (e) {
+            console.error('QnA: SQL execution error', e);
+            errorText = 'Error: SQL execution failed';
+            //setActiveIndex(State.error);
+            console.log(errorText);
+            return;
+        }
+
+        //if no row is found, set error
+        if (!qestionHolder || !qestionHolder.length || !qestionHolder[0].values.length) {
+            errorText = "Error: No data found in dictionary.db";
+            //setActiveIndex(State.error);
+            console.log(errorText);
+            return;
+        }
+
+        //returns the found values
+        return qestionHolder[0].values[0];
+    }
+
+    static GenerateNounQuestion(){
+        this.words = [];
+        this.answers = [];
+        for (let i = 0; i < 4; i++) {
+            const searchOutput = this.GenerateQuestionWInput("POS = 'n.'");
+            const searchOutputText = this.CheckAnswerValidity(searchOutput[3]);
+            
+            if (!searchOutput) {
+                errorText = "Error: No word found @ GenerateNounQuestion";
+                //setActiveIndex(State.error);
+                console.log(errorText);
+                this.question = errorText;
+                return;
+            }
+
+            else if(searchOutputText == false){
+                i--;
+            }
+
+            else if(searchOutputText.length == 0){
+                errorText = "Error: No text found for word@ GenerateNounQuestion";
+                //setActiveIndex(State.error);
+                console.log(errorText);
+                this.question = errorText;
+                return;
+            }
+
+            else{
+                this.words[i] = searchOutput[0];
+                this.answers[i] = searchOutputText;
+            }
+        }
+        this.question = "What is " + this.words[0] + "?";
+    }
+
+    //finds the first good definition of a word.  if no good definition is found, returns false.  This is to avoid bad definitions like "a type of" or "see also"
+    static CheckAnswerValidity(searchOutput){
+        //replaces the word in the def with the word we are testing
+        const replaceword = searchOutput.replaceAll("\\b" + searchOutput[0] + "\\b", "~~");
+
+        //splits the answer to account for multiple defs
+        const splitAnswer = replaceword.split("; ");
+
+        //filters bad answers
+        for (let i = 0; i < splitAnswer.length; i++) {
+            const tempSplit = splitAnswer[i].toLowerCase().split(" ").filter(word => word.length > 0);
+            if(tempSplit.length == 1 /* finds single word answers */ || 
+              (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see")) /*checks for bad answers in two size strings*/||
+              (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt." || tempSplit[0] === "characterized"))||
+              (tempSplit.length == 4 && (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being"))||
+              (tempSplit.length == 5 && (tempSplit[0] === "in" && tempSplit[1] === "the" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of")))
+            {
+
+            }
+            else{
+                return replaceword;
+            }
+        }
+        return false;
+    }
+
     //a question generating funtion that sets the questions and answers to pre-written answers for testing purposes
     static tempGenerateQuestion(){
         let randomNum = Math.floor(Math.random()*4);
