@@ -24,45 +24,6 @@ class QnA{
     }
 
     //pulls a random line from the db and adds the word to question field.
-    static tempGenerateSqlQuestion(){
-        //if no db found, move to error state
-        if (!window.db) {
-            errorText = "Error: Dictionary not found"
-            setActiveIndex(State.error);
-            return;
-        }
-
-        //makes a list of tables in the doc that are not metadata, in this case it can only be the dictionary, but could cause issues if another table is added.
-        const tables = window.db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-        
-        //if the table has no length or has no values, move to error state.  This will not happen in current version but is good practice.
-        if (!tables.length || !tables[0].values.length) {
-            errorText = "Error: No table found in dictionary.db";
-            setActiveIndex(State.error);
-            return;
-        }
-
-        //extracts the name of the first table.  This my not work for multiple tables. 
-        const tableName = tables[0].values[0][0];
-
-        //question holder holds a random line selected from the previously discovered table.  This will not be random if records are deleted from the table.
-        const qestionHolder = window.db.exec('SELECT * FROM "' + tableName + '" WHERE rowid = abs(random()) % (SELECT count(*) FROM "' + tableName + '") + 1');
-        
-        //if no row is found, set error
-        if (!qestionHolder.length || !qestionHolder[0].values.length) {
-            errorText = "Error: No data found in dictionary.db";
-            setActiveIndex(State.error);
-            return;
-        }
-
-        //sets row equal to an array of the values of question holder. 
-        const row = qestionHolder[0].values[0];
-        
-        //sets question equal to the word and the correct answer equal to its definition.  
-        QnA.question = `What is ${row[0]}?`;
-        QnA.answers = [row[3], "Wrong", "Wrong", "Wrong"];
-    }
-
     static GenerateQuestionWInput(SQLSelection){
 
         //if no db found, move to error state
@@ -89,6 +50,7 @@ class QnA{
 
         //question holder holds a random line selected from the previously discovered table.
         let qestionHolder;
+
         try {
             // basic validation/sanitization for the incoming SQLSelection
             if (typeof SQLSelection !== 'string' || !SQLSelection.trim()) {
@@ -102,7 +64,6 @@ class QnA{
             const safeTableName = tableName.replace(/"/g, '""');
             const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
             const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} ORDER BY random() LIMIT 1`;
-            console.log('QnA: executing query ->', query);
             qestionHolder = window.db.exec(query);
         } catch (e) {
             console.error('QnA: SQL execution error', e);
@@ -129,8 +90,9 @@ class QnA{
         this.answers = [];
         for (let i = 0; i < 4; i++) {
             const searchOutput = this.GenerateQuestionWInput("POS = 'n.'");
-            const searchOutputText = this.CheckAnswerValidity(searchOutput[3]);
-            
+
+            const searchOutputText = this.CheckAnswerValidity(searchOutput);
+
             if (!searchOutput) {
                 errorText = "Error: No word found @ GenerateNounQuestion";
                 //setActiveIndex(State.error);
@@ -139,6 +101,7 @@ class QnA{
                 return;
             }
 
+            
             else if(searchOutputText == false){
                 i--;
             }
@@ -161,60 +124,46 @@ class QnA{
 
     //finds the first good definition of a word.  if no good definition is found, returns false.  This is to avoid bad definitions like "a type of" or "see also"
     static CheckAnswerValidity(searchOutput){
-        //replaces the word in the def with the word we are testing
-        const replaceword = searchOutput.replaceAll("\\b" + searchOutput[0] + "\\b", "~~");
+        if (!Array.isArray(searchOutput) || searchOutput.length < 4) {
+            console.warn("Invalid search output passed to CheckAnswerValidity:", searchOutput);
+            return false;
+        }
 
-        //splits the answer to account for multiple defs
-        const splitAnswer = replaceword.split("; ");
+        const word = String(searchOutput[0] || '').toLowerCase();
+        const definition = typeof searchOutput[3] === 'string' ? searchOutput[3] : '';
+
+        if (!definition.trim()) {
+            console.warn("No definition found for word:", searchOutput[0]);
+            return false;
+        }
+
+        const replaceword = definition.toLowerCase()
+            .replaceAll("\\b" + word + "\\b", "~~")
+            .slice(1, -1);
+
+        const splitAnswer = replaceword
+            .split(/[;.]+/)
+            .map(part => part.trim())
+            .filter(part => part.length > 0);
 
         //filters bad answers
+        //TODO build a better filter
         for (let i = 0; i < splitAnswer.length; i++) {
-            const tempSplit = splitAnswer[i].toLowerCase().split(" ").filter(word => word.length > 0);
-            if(tempSplit.length == 1 /* finds single word answers */ || 
-              (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see")) /*checks for bad answers in two size strings*/||
-              (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt." || tempSplit[0] === "characterized"))||
+            const tempSplit = splitAnswer[i].split(/\s+/).filter(word => word.length > 0);
+            if(tempSplit.length == 1  || // finds single word answers 
+              (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see" || tempSplit[0] === "see")) || //checks for bad answers in two size strings
+              (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt." || tempSplit[0] === "characterized" || (tempSplit[0] === "one" && tempSplit[1] === "who")))||
               (tempSplit.length == 4 && (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being"))||
               (tempSplit.length == 5 && (tempSplit[0] === "in" && tempSplit[1] === "the" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of")))
             {
-
             }
             else{
-                return replaceword;
+                const cleanedAnswer = splitAnswer[i].replace(/\s+/g, ' ').trim();
+                const formattedAnswer = cleanedAnswer.charAt(0).toUpperCase() + cleanedAnswer.slice(1);
+                return formattedAnswer + (formattedAnswer.endsWith('.') ? '' : '.');
             }
         }
         return false;
-    }
-
-    //a question generating funtion that sets the questions and answers to pre-written answers for testing purposes
-    static tempGenerateQuestion(){
-        let randomNum = Math.floor(Math.random()*4);
-        switch (randomNum) {
-        case 0:
-            QnA.question = "What is an apple?";
-            QnA.answers = ["red fruit", "green fruit", "blue fruit", "purple fruit"]
-        break; 
-        case 1:
-            QnA.question = "What is an oubliette?";
-            QnA.answers = ["An oubliette is a secret, underground dungeon in a castle or fortress designed so that the only entrance or exit is a trap door in the ceiling",
-                            "An oubliette is a broad, scarf-like neckband worn by men, tucked into the collar of a shirt.",
-                            "Oubliette refers to a genus of drought-tolerant shrubs, trees, and plants in the asparagus family native to the Americas.",
-                            "The oubliette is a smooth, progressive ballroom dance characterized by long, continuous, flowing movements across the floor."];
-        break;
-        case 2:
-            QnA.question = "A horse is a ?";
-            QnA.answers = ["mammal",
-                            "bird",
-                            "fish",
-                            "dinosaur"]
-        break;
-        case 3:
-            QnA.question = "What does Cantankerous mean?";
-            QnA.answers = ["Cantankerous describes someone who is bad-tempered, argumentative, uncooperative, and difficult to deal with.",
-                            "Cantankerous describes something related to or affected by cancer",
-                            "Cantankerous describes making a loud and confused noise",
-                            "Cantankerous describes making a continuous loud banging or ringing sound"]
-        break;
-        }
     }
     
     //getter for the question field.  TODO is this safe?
