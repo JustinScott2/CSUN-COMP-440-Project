@@ -1,6 +1,9 @@
 //errorText holds a string that diplayed when a failed screen transition happens 
 let errorText = "Error: no matching state";
 
+//streak holds the number of correct answers in a row
+let streak = 0;
+
 //TODO add privacy  TODO check if error catchers work
 //OnA is a class that holds the question, the possible answers, words associated with incorect answers and the getting/setting functions for those fields.
 // index |   words           |  answers
@@ -16,6 +19,9 @@ class QnA{
     static words = [];
     //ex. red fruit, orange fruit, green fruit, yellow fruit
     static answers = [];
+
+    static correctResponse = "";
+    static wrongResponse = "";
   
     //curent call to generate a question, will be reworked in the game modes update
     static async generateQuestion(){
@@ -116,10 +122,18 @@ class QnA{
 
             else{
                 this.words[i] = searchOutput[0];
-                this.answers[i] = searchOutputText;
+                this.answers[i] = this.DeTildeify(searchOutputText, this.words[i]);
             }
         }
+
+        let aOrAn = "";
+        if(this.words[0].charAt(0).toLowerCase() === 'a' || this.words[0].charAt(0).toLowerCase() === 'e' || this.words[0].charAt(0).toLowerCase() === 'i' || this.words[0].charAt(0).toLowerCase() === 'o' || this.words[0].charAt(0).toLowerCase() === 'u') {
+            aOrAn = "an";
+        } else {
+            aOrAn = "a";
+        }
         this.question = "What is " + this.words[0] + "?";
+        this.correctResponse = "the definition of " + aOrAn + " " + this.words[0] + " is";
     }
 
     //finds the first good definition of a word.  if no good definition is found, returns false.  This is to avoid bad definitions like "a type of" or "see also"
@@ -154,7 +168,8 @@ class QnA{
               (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see" || tempSplit[0] === "see")) || //checks for bad answers in two size strings
               (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt." || tempSplit[0] === "characterized" || (tempSplit[0] === "one" && tempSplit[1] === "who")))||
               (tempSplit.length == 4 && (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being"))||
-              (tempSplit.length == 5 && (tempSplit[0] === "in" && tempSplit[1] === "the" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of")))
+              (tempSplit.length == 5 && (tempSplit[0] === "in" && tempSplit[1] === "the" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of"))||
+              (splitAnswer[i].length > 150))
             {
             }
             else{
@@ -166,6 +181,16 @@ class QnA{
         return false;
     }
     
+    //takes a string with ~~ in it and replaces the ~~ with the word, then capitalizes the first letter of the string and returns it (incase the ~~ was at the beginning).
+    static DeTildeify(inputString, word){
+        if (typeof inputString !== 'string') {
+            console.log("DeTildeify received a non-string input:", inputString);
+            return '';
+        }
+        inputString = inputString.replace(/~~/g, word).trim();
+        return inputString.charAt(0).toUpperCase() + inputString.slice(1);
+    }
+
     //getter for the question field.  TODO is this safe?
     static getQuestion(){
         return QnA.question;
@@ -499,6 +524,7 @@ function Form() {
 
     //CorrectAnswerPanel is the html for the correct answer state
     function CorrectAnswerPanel() {
+        streak++;
         return (
             <section className="correct-answer-panel">
 
@@ -506,7 +532,9 @@ function Form() {
 
                 <section style={{ display: 'flex', alignItems: 'center' }}>
 
-                    <h2>Correct Answer!</h2>
+                    <h1>Correct!</h1>
+
+                    <p> {QnA.correctResponse}</p>
 
                     <div style = {{width: '30px'}}></div>
 
@@ -529,6 +557,7 @@ function Form() {
 
     //WrongAnswerPanel is the html for the wrong answer state
     function WrongAnswerPanel() {
+        streak = 0;
         return (
             <section className="wrong-answer-panel">
             
@@ -546,7 +575,7 @@ function Form() {
         
                 <section style={{ display: 'flex', alignItems: 'center' }}>
         
-                    <button onClick={() => setActiveIndex(State.question)}>Next Word?</button>  
+                    <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>  
         
                 </section>
         
