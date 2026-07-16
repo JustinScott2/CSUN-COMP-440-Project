@@ -3,6 +3,7 @@ let errorText = "Error: no matching state";
 
 //streak holds the number of correct answers in a row
 let streak = 0;
+let selectedIndex = -1;
 
 //TODO add privacy  TODO check if error catchers work
 //OnA is a class that holds the question, the possible answers, words associated with incorect answers and the getting/setting functions for those fields.
@@ -69,7 +70,7 @@ class QnA{
             // escape any double-quotes inside the table name
             const safeTableName = tableName.replace(/"/g, '""');
             const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
-            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} ORDER BY random() LIMIT 1`;
+            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > 7 ORDER BY random() LIMIT 1`;
             qestionHolder = window.db.exec(query);
         } catch (e) {
             console.error('QnA: SQL execution error', e);
@@ -194,6 +195,11 @@ class QnA{
     //getter for the question field.  TODO is this safe?
     static getQuestion(){
         return QnA.question;
+    }
+
+    //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
+    static getWords(){
+        return QnA.words ? [...QnA.words] : [];
     }
 
     //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
@@ -526,27 +532,25 @@ function Form() {
     function CorrectAnswerPanel() {
         streak++;
         return (
-            <section className="correct-answer-panel">
+            <section className="correct-answer-panel" style={styles.menuPanel}>
 
-                <h1 style = {styles.title}>{QnA.getQuestion()}</h1>
+                <h1 style = {styles.title}>Correct!</h1>
 
-                <section style={{ display: 'flex', alignItems: 'center' }}>
+                <section style={styles.menuPanel}>       
 
-                    <h1>Correct!</h1>
+                    <h1> {QnA.correctResponse +":"} </h1>
 
-                    <p> {QnA.correctResponse}</p>
-
-                    <div style = {{width: '30px'}}></div>
-
-                    <h3>{QnA.getAnswers()[0]}</h3>
+                    <h1>{QnA.getAnswers()[0]}</h1>
 
                 </section>
 
-                <section style={{ display: 'flex', alignItems: 'center' }}>
+                <section style={styles.menuPanel}>
 
                     <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>
                 
                 </section>
+
+                <p>Streak: {streak}</p>
             
             </section>
         );
@@ -559,17 +563,15 @@ function Form() {
     function WrongAnswerPanel() {
         streak = 0;
         return (
-            <section className="wrong-answer-panel">
-            
-                <h1 style = {styles.title}>{QnA.getQuestion()}</h1>
+            <section className="wrong-answer-panel" style={styles.menuPanel}>
+                            
+                <h1 style = {styles.title}>Incorrect!</h1>
         
-                <section style={{ display: 'flex', alignItems: 'center' }}>
-        
-                    <h2>Wrong Answer!</h2>
-        
-                    <div style = {{width: '30px'}}></div>
-        
-                    <h3>{QnA.getAnswers()[0]}</h3>
+                <section style={styles.menuPanel}>   
+
+                    <h1> {"You chose: " + QnA.getAnswers()[selectedIndex].slice(0, -1) + ", which is associated with the word: " +  QnA.getWords()[selectedIndex] } </h1>
+
+                    <h1> {"The correct answer for " + QnA.getWords()[0]+" is: " + QnA.getAnswers()[0]} </h1>
         
                 </section>
         
@@ -578,7 +580,9 @@ function Form() {
                     <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>  
         
                 </section>
-        
+
+                <p>Streak: {streak}</p>
+            
             </section>
         );
     }
@@ -594,13 +598,12 @@ function Form() {
 
         for(let i = 0; i < 4; i++){
             container.answers[wrapAround(i, randomNum, 4)] = localAnswers[i];
-
             if(i === 0){
-                container.onPressess[wrapAround(i, randomNum, 4)] = (() => setActiveIndex(State.correctAnswer));
+                container.onPressess[wrapAround(i, randomNum, 4)] = (() => {setActiveIndex(State.correctAnswer); selectedIndex = i});
             }
 
             else{
-                container.onPressess[wrapAround(i, randomNum, 4)] = (() => setActiveIndex(State.wrongAnswer));
+                container.onPressess[wrapAround(i, randomNum, 4)] = (() => {setActiveIndex(State.wrongAnswer); selectedIndex = i});
             }
         }
         
