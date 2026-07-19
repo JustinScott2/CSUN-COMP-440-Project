@@ -28,11 +28,11 @@ class QnA{
     //curent call to generate a question, will be reworked in the game modes update
     static async generateQuestion(){
         await window.dbPromise; // Ensure the database is loaded before generating a question
-        await this.GenerateNounQuestion();
+        await this.GenerateSQLQuestion("POS = 'v.' or POS = 'v. t.'", 8);
     }
 
     //pulls a random line from the db and adds the word to question field.
-    static GenerateQuestionWInput(SQLSelection){
+    static GenerateQuestionWInput(SQLSelection, minOccurences) {
 
         //if no db found, move to error state
         if (!window.db) {
@@ -71,7 +71,7 @@ class QnA{
             // escape any double-quotes inside the table name
             const safeTableName = tableName.replace(/"/g, '""');
             const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
-            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > 7 ORDER BY random() LIMIT 1`;
+            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > ${minOccurences} ORDER BY random() LIMIT 1`;
             qestionHolder = window.db.exec(query);
         } catch (e) {
             console.error('QnA: SQL execution error', e);
@@ -93,16 +93,16 @@ class QnA{
         return qestionHolder[0].values[0];
     }
 
-    static GenerateNounQuestion(){
+    static GenerateSQLQuestion(wordChoice, minOccurences){
         this.words = [];
         this.answers = [];
         for (let i = 0; i < 4; i++) {
-            const searchOutput = this.GenerateQuestionWInput("POS = 'n.'");
+            const searchOutput = this.GenerateQuestionWInput(wordChoice, minOccurences);
 
             const searchOutputText = this.CheckAnswerValidity(searchOutput);
 
             if (!searchOutput) {
-                errorText = "Error: No word found @ GenerateNounQuestion";
+                errorText = "Error: No word found @ GenerateSQLQuestion";
                 //setActiveIndex(State.error);
                 console.log(errorText);
                 this.question = errorText;
@@ -115,7 +115,7 @@ class QnA{
             }
 
             else if(searchOutputText.length == 0){
-                errorText = "Error: No text found for word@ GenerateNounQuestion";
+                errorText = "Error: No text found for word@ GenerateSQLQuestion";
                 //setActiveIndex(State.error);
                 console.log(errorText);
                 this.question = errorText;
