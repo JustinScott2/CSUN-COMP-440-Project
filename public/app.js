@@ -3,6 +3,7 @@ let errorText = "Error: no matching state";
 
 //streak holds the number of correct answers in a row
 let streak = 0;
+let bestStreak = 0;
 let selectedIndex = -1;
 
 //TODO add privacy  TODO check if error catchers work
@@ -267,7 +268,7 @@ const styles = {
         alignItems: 'center',
         padding: '0 16px',
         gap: '12px',
-        marginBottom: '24px',
+        marginBottom: '5px',
     },
 
     //style for the settings buttion
@@ -364,6 +365,18 @@ const styles = {
         padding: '10px',
         fontSize: '1.5rem',
     },
+
+    //styles for streak panel elements, ie the streak text at the bottom of the screen
+    StreakPanel: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 16px',
+        gap: '12px',
+        width: '75%',
+        margin: '0 auto 5px',
+        flexDirection: 'row',
+    },
     //#endregion
 };
 
@@ -395,6 +408,7 @@ function Form() {
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
                 <QuestionPanel></QuestionPanel>
+                <StreakPanel></StreakPanel>
                 </React.Fragment>
             );
         break;
@@ -404,6 +418,7 @@ function Form() {
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
                 <CorrectAnswerPanel></CorrectAnswerPanel>
+                <StreakPanel></StreakPanel>
                 </React.Fragment>
             );
         break;
@@ -413,6 +428,7 @@ function Form() {
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
                 <WrongAnswerPanel></WrongAnswerPanel>
+                <StreakPanel></StreakPanel>
                 </React.Fragment>
             );
         break;
@@ -472,6 +488,20 @@ function Form() {
         );
     }
 
+    //StreakPanel is the HTML for the streak panel state, ie the streak text at the bottom.
+    function StreakPanel() {
+        return (
+            <section style={styles.StreakPanel} className="streak-panel">
+
+                <p>Streak: {streak}</p>
+                
+                {activeIndex == State.wrongAnswer && (
+                    <p>Best Streak: {bestStreak}</p>
+                )}
+
+            </section>
+        );
+    }
     //TODO save the question text and answer text to a higher level, so that it can be used in the correct/wrong answer panels
     //TODO add a funtion that generates a new question
 
@@ -518,6 +548,8 @@ function Form() {
                     <div style = {{width: '10px'}}></div>
                 
                     <button style={styles.gridButton} onClick={buttonContainer.onPressess[3]}>{buttonContainer.answers[3]}</button>
+
+                    
             
                 </section>
         
@@ -549,8 +581,6 @@ function Form() {
                     <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>
                 
                 </section>
-
-                <p>Streak: {streak}</p>
             
             </section>
         );
@@ -561,6 +591,9 @@ function Form() {
 
     //WrongAnswerPanel is the html for the wrong answer state
     function WrongAnswerPanel() {
+        if(streak > bestStreak){
+            bestStreak = streak;
+        }
         streak = 0;
         return (
             <section className="wrong-answer-panel" style={styles.menuPanel}>
@@ -580,8 +613,6 @@ function Form() {
                     <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>  
         
                 </section>
-
-                <p>Streak: {streak}</p>
             
             </section>
         );
