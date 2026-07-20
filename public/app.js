@@ -4,6 +4,8 @@ let errorText = "Error: no matching state";
 //streak holds the number of correct answers in a row
 let streak = 0;
 let bestStreak = 0;
+
+//records the index of the chosen question so it can be shown in the incorrect screen.
 let selectedIndex = -1;
 
 //TODO add privacy  TODO check if error catchers work
@@ -24,11 +26,14 @@ class QnA{
 
     static correctResponse = "";
     static wrongResponse = "";
+
+    static currentQuestion = "";
+    static minOccurences = 8;
   
     //curent call to generate a question, will be reworked in the game modes update
     static async generateQuestion(){
         await window.dbPromise; // Ensure the database is loaded before generating a question
-        await this.GenerateSQLQuestion("POS = 'v.' or POS = 'v. t.'", 8);
+        await this.GenerateSQLQuestion(this.currentQuestion, this.minOccurences);
     }
 
     //pulls a random line from the db and adds the word to question field.
@@ -71,7 +76,7 @@ class QnA{
             // escape any double-quotes inside the table name
             const safeTableName = tableName.replace(/"/g, '""');
             const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
-            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > ${minOccurences} ORDER BY random() LIMIT 1`;
+            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > ${minOccurences} and POS != """""" ORDER BY random() LIMIT 1`;
             qestionHolder = window.db.exec(query);
         } catch (e) {
             console.error('QnA: SQL execution error', e);
@@ -170,6 +175,7 @@ class QnA{
               (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see" || tempSplit[0] === "see")) || //checks for bad answers in two size strings
               (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt." || tempSplit[0] === "characterized" || (tempSplit[0] === "one" && tempSplit[1] === "who")))||
               (tempSplit.length == 4 && (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being"))||
+              (tempSplit.length == 4 && (tempSplit[0] === "in" && tempSplit[3] === "manner"))||
               (tempSplit.length == 5 && (tempSplit[0] === "in" && tempSplit[1] === "the" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of"))||
               (splitAnswer[i].length > 150))
             {
@@ -234,15 +240,6 @@ function pxStringHandler(pxVal, operation) {
     return result + 'px';
 }
 //#endregion
-
-//This object represents an enum for the different program states.
-const State = {
-    menu: 0,
-    question: 1,
-    correctAnswer: 2,
-    wrongAnswer: 3,
-    error: 4
-};
 
 const styles = {
     //TODO not sure quite what this does. 
@@ -378,9 +375,28 @@ const styles = {
         flexDirection: 'row',
     },
     //#endregion
+
+    questionTypeButtion: {
+        width: "600px",
+        get height() { return pxStringHandler(this.width, (val) => val / 4); },
+        get minWidth() { return this.width; },
+        get minHeight() { return this.height; },
+        padding: '10px',
+        fontSize: '3.5rem',
+    },
 };
 
-//form is the funtion that inex actually runs
+//This object represents an enum for the different program states.
+const State = {
+    menu: 0,
+    question: 1,
+    correctAnswer: 2,
+    wrongAnswer: 3,
+    chooseQuestion: 4,
+    error: 5
+};
+
+//form is the funtion that index actually runs
 function Form() {
 
     //creates the activeindex variable
@@ -433,6 +449,15 @@ function Form() {
             );
         break;
 
+        case State.chooseQuestion:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ChooseQuestionTypePanel></ChooseQuestionTypePanel>
+                </React.Fragment>
+            );
+        break;
+
         default:
             content = (
                 <React.Fragment>
@@ -456,7 +481,7 @@ function Form() {
 
                 <h3 style={styles.subtitle}>How big is your lexicon?</h3>
 
-                <button style={styles.playButton} onClick={() => setActiveIndex(State.question)}>PLAY!</button>
+                <button style={styles.playButton} onClick={() => setActiveIndex(State.chooseQuestion)}>PLAY!</button>
 
                 <section style={{ display: 'flex', alignItems: 'center' }}>
 
@@ -479,7 +504,7 @@ function Form() {
                 
                 {/* this is an if statement that only shows the button if the first condition is true */}
                 {activeIndex !== State.menu && (
-                    <button style={styles.backButton} onClick={() => setActiveIndex(State.menu)}>Return</button>
+                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; setActiveIndex(State.menu)}}>Return</button>
                 )}
 
                 <button style={styles.settingsButton} onClick={() => setActiveIndex(State.error)}>Settings</button>
@@ -502,6 +527,46 @@ function Form() {
             </section>
         );
     }
+
+    //chooseQuestionPanel is the HTML for the choose question panel
+    function ChooseQuestionTypePanel() {
+        errorText = "entered cQTP";
+        return (
+            <section style={styles.menuPanel} className="Choose-Question-type-panel">
+                
+                <h2> Choose Mode: </h2>
+                
+                <section style={ {display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'flex-start'}}>
+                    
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.currentQuestion = "1=1"; setActiveIndex(State.question)}}>All Words</button>
+                    
+                    <div style = {{width: '10px'}}></div>
+
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.currentQuestion = "POS = 'a.'"; setActiveIndex(State.question)}}>Adjectives Only</button>
+                    
+                    <div style = {{width: '10px'}}></div>
+
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.currentQuestion = "POS = 'adv.'"; setActiveIndex(State.question)}}>Adverbs Only</button>
+                    
+                    <div style = {{width: '10px'}}></div>
+
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.currentQuestion = "POS = 'n.'"; setActiveIndex(State.question)}}>Nouns Only</button>
+                   
+                    <div style = {{width: '10px'}}></div>
+                    
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.currentQuestion = "POS = 'v.'"; setActiveIndex(State.question)}}>Verbs Only</button>
+                 
+                    <div style = {{width: '10px'}}></div>
+                    
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.currentQuestion ="POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.'"; setActiveIndex(State.question)}}>All Verb Types</button>
+
+                </section>
+
+            </section>
+        );
+    }
+
+
     //TODO save the question text and answer text to a higher level, so that it can be used in the correct/wrong answer panels
     //TODO add a funtion that generates a new question
 
