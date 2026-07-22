@@ -20,8 +20,6 @@ class QnA{
     //TODO replace all with rows
     //ex. What is an apple?
     static question ="";
-    //ex. apple, orange, lime, lemon
-    static words = [];
 
     static rows = [];
     //ex. red fruit, orange fruit, green fruit, yellow fruit
@@ -30,7 +28,6 @@ class QnA{
     static correctResponse = "";
     static wrongResponse = "";
 
-    static currentQuestion = "";
     static questionSearchParams = "";
     static minOccurences = 8;
 
