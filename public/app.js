@@ -33,14 +33,14 @@ class QnA{
     //curent call to generate a question, will be reworked in the game modes update
     static async generateQuestion(){
         await window.dbPromise; // Ensure the database is loaded before generating a question
-        await this.GenerateSQLQuestion(this.currentQuestion, this.minOccurences);
+        await this.GenerateSQLQuestion(window.db, this.currentQuestion, this.minOccurences);
     }
 
     //pulls a random line from the db and adds the word to question field.
-    static GenerateQuestionWInput(SQLSelection, minOccurences) {
+    static GenerateQuestionWInput(database, SQLSelection, minOccurences) {
 
         //if no db found, move to error state
-        if (!window.db) {
+        if (!database) {
             errorText = "Error: Dictionary not found"
             //setActiveIndex(State.error);
             console.log(errorText);
@@ -48,7 +48,7 @@ class QnA{
         }
 
         //makes a list of tables in the doc that are not metadata, in this case it can only be the dictionary, but could cause issues if another table is added.
-        const tables = window.db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+        const tables = database.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
         
         //if the table has no length or has no values, move to error state.  This will not happen in current version but is good practice.
         if (!tables.length || !tables[0].values.length) {
@@ -77,7 +77,7 @@ class QnA{
             const safeTableName = tableName.replace(/"/g, '""');
             const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
             const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > ${minOccurences} and POS != """""" ORDER BY random() LIMIT 1`;
-            qestionHolder = window.db.exec(query);
+            qestionHolder = database.exec(query);
         } catch (e) {
             console.error('QnA: SQL execution error', e);
             errorText = 'Error: SQL execution failed';
@@ -98,11 +98,11 @@ class QnA{
         return qestionHolder[0].values[0];
     }
 
-    static GenerateSQLQuestion(wordChoice, minOccurences){
+    static GenerateSQLQuestion(database, wordChoice, minOccurences){
         this.words = [];
         this.answers = [];
         for (let i = 0; i < 4; i++) {
-            const searchOutput = this.GenerateQuestionWInput(wordChoice, minOccurences);
+            const searchOutput = this.GenerateQuestionWInput(database, wordChoice, minOccurences);
 
             const searchOutputText = this.CheckAnswerValidity(searchOutput);
 
