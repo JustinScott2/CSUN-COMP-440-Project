@@ -34,6 +34,17 @@
                 .then(buf => {
                     window.SQL = SQL;
                     window.db = new SQL.Database(new Uint8Array(buf));
+                    window.db2 = new SQL.Database();
+                    window.db2.run(`
+                        CREATE TABLE IF NOT EXISTS myWords (
+                            Word TEXT,
+                            Count INTEGER,
+                            POS TEXT,
+                            Definition TEXT,
+                            NumWrong INTEGER,
+                            PRIMARY KEY (Word, Count, POS, Definition)
+                        );
+                    `);
                     return window.db;
                 })
             )
