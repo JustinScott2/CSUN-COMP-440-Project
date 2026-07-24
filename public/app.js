@@ -281,9 +281,10 @@ class localDB {
         if(tableOutput.length === 0){
             return "No incorrect words";
         }
-
+       
+        const columns = tableOutput[0].columns;
         const rows = tableOutput[0].values;
-
+        
         rows.forEach(element => {
             outputString += `     ${element[4]}       `+ element[0] + ": " + element[3] + "\n";
         });
@@ -769,6 +770,7 @@ function Form() {
             
             </section>
         );
+
     }
 
     //this funtion makes an object that holds 2 arrays of 4, the answers and their associated buttions, where answers[0] is associated with onPresses[0]
