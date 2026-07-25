@@ -274,20 +274,23 @@ class localDB {
     }
 
     static stringOfIncorrectWords(dataBase){
-        let outputString = ("Times Missed:    Word and Definition \n________________________________________\n");
+        if (!dataBase) {
+            return "No incorrect wordsDB found";
+        }
 
-        const tableOutput = dataBase.exec(`SELECT * FROM ${dataBase} ORDER BY NumWrong`);
+        let outputString = "Times Missed:    Word and Definition \n________________________________________\n";
 
-        if(tableOutput.length === 0){
+        const tableOutput = dataBase.exec(`SELECT * FROM myWords ORDER BY NumWrong`);
+
+        if (!tableOutput.length || !tableOutput[0].values.length) {
             return "No incorrect words";
         }
-       
-        const columns = tableOutput[0].columns;
+
         const rows = tableOutput[0].values;
-        
         rows.forEach(element => {
-            outputString += `     ${element[4]}       `+ element[0] + ": " + element[3] + "\n";
+            outputString += `     ${element[4]}       ${element[0]}: ${element[3]}\n`;
         });
+
         return outputString;
     }
 }
@@ -529,7 +532,7 @@ function Form() {
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <myWordsPanel></myWordsPanel>
+                <MyWordsPanel></MyWordsPanel>
                 </React.Fragment>
             );
         break;
@@ -580,7 +583,7 @@ function Form() {
                 
                 {/* this is an if statement that only shows the button if the first condition is true */}
                 {activeIndex !== State.menu && (
-                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; setActiveIndex(State.menu)}}>Return</button>
+                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; if (runningMyWords === true) { runningMyWords = false;} setActiveIndex(State.menu)}}>Return</button>
                 )}
 
                 <button style={styles.settingsButton} onClick={() => setActiveIndex(State.error)}>Settings</button>
@@ -762,15 +765,33 @@ function Form() {
 
 
     //myWordsPanel is a screen that shows you the words you got incorrect
-    function myWordsPanel() {
-        return (
-            <section className="wrong-words-panel" style={styles.menuPanel}>
-                            
-                <h1 style = {styles.title}>Incorr</h1>
+    function MyWordsPanel() {
+        const textStr = localDB.stringOfIncorrectWords(window.db2);
+        if(textStr === "No incorrect words"){
+            return(
+                <section className="wrong-words-panel" style={styles.menuPanel}>
+                    <h1 style = {styles.title}>This is where I'd keep my incorrect words.{"\n"}IF I HAD ANY!</h1>
+                </section>
+                );
+        }
+        //TODO change the <pre></pre>
+        else{
+            return (
+                <section className="wrong-words-panel" style={styles.menuPanel}>
+                                
+                <pre style={{ whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', maxWidth: '99%' }}>
+                    {textStr}
+                </pre>
             
-            </section>
-        );
-
+                    <section style={{ display: 'flex', alignItems: 'center' }}>
+            
+                        <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Test Your Words?</button>  
+            
+                    </section>
+                
+                </section>
+            );
+        }
     }
 
     //this funtion makes an object that holds 2 arrays of 4, the answers and their associated buttions, where answers[0] is associated with onPresses[0]
