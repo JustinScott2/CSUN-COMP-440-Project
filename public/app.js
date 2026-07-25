@@ -8,6 +8,8 @@ let bestStreak = 0;
 //records the index of the chosen question so it can be shown in the incorrect screen.
 let selectedIndex = -1;
 
+let runningMyWords = false;
+
 //TODO add privacy  TODO check if error catchers work
 //OnA is a class that holds the question, the possible answers, words associated with incorect answers and the getting/setting functions for those fields.
 // index |   words           |  answers
@@ -103,9 +105,19 @@ class QnA{
     static GenerateSQLQuestion(database, wordChoice, minOccurences){
         this.rows = [];
         for (let i = 0; i < 4; i++) {
-            const searchOutput = this.GenerateQuestionWInput(database, wordChoice, minOccurences);
+            let searchOutput = "";
+            let searchOutputText = "";
+            if(runningMyWords && i == 0){
+                searchOutput = this.GenerateQuestionWInput(window.db2, "1=1", 0);
 
-            const searchOutputText = this.CheckAnswerValidity(searchOutput);
+                searchOutputText = this.CheckAnswerValidity(searchOutput);
+            }
+            else{
+                searchOutput = this.GenerateQuestionWInput(database, wordChoice, minOccurences);
+
+                searchOutputText = this.CheckAnswerValidity(searchOutput);
+            }
+
 
             if (!searchOutput) {
                 errorText = "Error: No word found @ GenerateSQLQuestion";
@@ -190,6 +202,7 @@ class QnA{
         return false;
     }
     
+    // #region QnA tools
     //takes a string with ~~ in it and replaces the ~~ with the word, then capitalizes the first letter of the string and returns it (incase the ~~ was at the beginning).
     static DeTildeify(inputString, word){
         if (typeof inputString !== 'string') {
@@ -207,7 +220,7 @@ class QnA{
 
     //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
     static getWords(){
-        return QnA.words ? QnA.words.map(row => row[0]) : [];
+        return QnA.rows ? QnA.rows.map(row => row[0]) : [];
     }
 
     //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
@@ -225,35 +238,15 @@ class QnA{
             return;
         }
     }
+    // #endRegion
 }
 
 class localDB {
-    static init() {
-        if (window.db2) {
-            return window.db2;
-        }
 
-        if (!window.SQL) {
-            throw new Error('SQL.js is not available yet.');
-        }
-
-        window.db2 = new window.SQL.Database();
-        window.db2.run(`
-            CREATE TABLE IF NOT EXISTS myWords (
-                Word TEXT,
-                Count INTEGER,
-                POS TEXT,
-                Definition TEXT,
-                NumWrong INTEGER,
-                PRIMARY KEY (Word, Count, POS, Definition)
-            );
-        `);
-        return window.db2;
-    }
-
-    static addUser(line) {
+    static addLine(line) {
         if (!window.db2) {
-            this.init();
+            errorText = "Error: db2 does not exist"
+            return;
         }
 
         const selectStmt = window.db2.prepare(
@@ -269,7 +262,9 @@ class localDB {
             );
             insertStmt.run([line[0], line[1], line[2], line[3]]);
             insertStmt.free();
-        } else {
+        } 
+        
+        else {
             const updateStmt = window.db2.prepare(
                 `UPDATE myWords SET NumWrong = COALESCE(NumWrong, 0) + 1 WHERE Word = ? AND Count = ? AND POS = ? AND Definition = ?`
             );
@@ -278,23 +273,25 @@ class localDB {
         }
     }
 
-    static getAllWrongWords() {
-        if (!window.db2) {
-            return [];
+    static stringOfIncorrectWords(dataBase){
+        if (!dataBase) {
+            return "No incorrect wordsDB found";
         }
 
-        const results = window.db2.exec(`SELECT Word, Count, POS, Definition, NumWrong FROM myWords`);
-        if (!results.length) {
-            return [];
+        let outputString = "Times Missed:    Word and Definition \n________________________________________\n";
+
+        const tableOutput = dataBase.exec(`SELECT * FROM myWords ORDER BY NumWrong`);
+
+        if (!tableOutput.length || !tableOutput[0].values.length) {
+            return "No incorrect words";
         }
 
-        return results[0].values.map(row => ({
-            Word: row[0],
-            Count: row[1],
-            POS: row[2],
-            Definition: row[3],
-            NumWrong: row[4],
-        }));
+        const rows = tableOutput[0].values;
+        rows.forEach(element => {
+            outputString += `     ${element[4]}       ${element[0]}: ${element[3]}\n`;
+        });
+
+        return outputString;
     }
 }
 
@@ -465,7 +462,8 @@ const State = {
     correctAnswer: 2,
     wrongAnswer: 3,
     chooseQuestion: 4,
-    error: 5
+    myWords: 5,
+    error: 6
 };
 
 //form is the funtion that index actually runs
@@ -530,6 +528,15 @@ function Form() {
             );
         break;
 
+        case State.myWords:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <MyWordsPanel></MyWordsPanel>
+                </React.Fragment>
+            );
+        break;
+
         default:
             content = (
                 <React.Fragment>
@@ -557,7 +564,7 @@ function Form() {
 
                 <section style={{ display: 'flex', alignItems: 'center' }}>
 
-                    <button style={styles.rowButton} onClick={() => setActiveIndex(State.error)}>My Words</button>
+                    <button style={styles.rowButton} onClick={() => {runningMyWords = true; setActiveIndex(State.myWords)}}>My Words</button>
 
                     <div style = {{width: '10px'}}></div>
 
@@ -576,7 +583,7 @@ function Form() {
                 
                 {/* this is an if statement that only shows the button if the first condition is true */}
                 {activeIndex !== State.menu && (
-                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; setActiveIndex(State.menu)}}>Return</button>
+                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; if (runningMyWords === true) { runningMyWords = false;} setActiveIndex(State.menu)}}>Return</button>
                 )}
 
                 <button style={styles.settingsButton} onClick={() => setActiveIndex(State.error)}>Settings</button>
@@ -602,7 +609,6 @@ function Form() {
 
     //chooseQuestionPanel is the HTML for the choose question panel
     function ChooseQuestionTypePanel() {
-        errorText = "entered cQTP";
         return (
             <section style={styles.menuPanel} className="Choose-Question-type-panel">
                 
@@ -732,6 +738,8 @@ function Form() {
             bestStreak = streak;
         }
         streak = 0;
+        localDB.addLine(QnA.rows[0]);
+        localDB.addLine(QnA.rows[selectedIndex]);
         return (
             <section className="wrong-answer-panel" style={styles.menuPanel}>
                             
@@ -753,6 +761,37 @@ function Form() {
             
             </section>
         );
+    }
+
+
+    //myWordsPanel is a screen that shows you the words you got incorrect
+    function MyWordsPanel() {
+        const textStr = localDB.stringOfIncorrectWords(window.db2);
+        if(textStr === "No incorrect words"){
+            return(
+                <section className="wrong-words-panel" style={styles.menuPanel}>
+                    <h1 style = {styles.title}>This is where I'd keep my incorrect words.{"\n"}IF I HAD ANY!</h1>
+                </section>
+                );
+        }
+        //TODO change the <pre></pre>
+        else{
+            return (
+                <section className="wrong-words-panel" style={styles.menuPanel}>
+                                
+                <pre style={{ whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', maxWidth: '99%' }}>
+                    {textStr}
+                </pre>
+            
+                    <section style={{ display: 'flex', alignItems: 'center' }}>
+            
+                        <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Test Your Words?</button>  
+            
+                    </section>
+                
+                </section>
+            );
+        }
     }
 
     //this funtion makes an object that holds 2 arrays of 4, the answers and their associated buttions, where answers[0] is associated with onPresses[0]
