@@ -18,283 +18,6 @@ let runningMyWords = false;
 //     2 | word for 2        | def of w2
 //     3 | word for 3        | def of w3
 
-class QnA{
-    //TODO replace all with rows
-    //ex. What is an apple?
-    static question ="";
-
-    static rows = [];
-    //ex. red fruit, orange fruit, green fruit, yellow fruit
-    static answers = [];
-
-    static correctResponse = "";
-    static wrongResponse = "";
-
-    static questionSearchParams = "";
-    static minOccurences = 8;
-
-  
-    //curent call to generate a question, will be reworked in the game modes update
-    static async generateQuestion(){
-        await window.dbPromise; // Ensure the database is loaded before generating a question
-        await this.GenerateSQLQuestion(window.db, this.questionSearchParams, this.minOccurences);
-    }
-
-    //pulls a random line from the db and adds the word to question field.
-    static GenerateQuestionWInput(database, SQLSelection, minOccurences) {
-
-        //if no db found, move to error state
-        if (!database) {
-            errorText = "Error: Dictionary not found"
-            //setActiveIndex(State.error);
-            console.log(errorText);
-            return;
-        }
-
-        //makes a list of tables in the doc that are not metadata, in this case it can only be the dictionary, but could cause issues if another table is added.
-        const tables = database.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-        
-        //if the table has no length or has no values, move to error state.  This will not happen in current version but is good practice.
-        if (!tables.length || !tables[0].values.length) {
-            errorText = "Error: No table found in dictionary.db" + tables.length + " " + tables[0].values.length;
-            //setActiveIndex(State.error);
-            console.log(errorText);
-            return;
-        }
-
-        //extracts the name of the first table.  This my not work for multiple tables. 
-        const tableName = tables[0].values[0][0];
-
-        //question holder holds a random line selected from the previously discovered table.
-        let qestionHolder;
-
-        try {
-            // basic validation/sanitization for the incoming SQLSelection
-            if (typeof SQLSelection !== 'string' || !SQLSelection.trim()) {
-                SQLSelection = '1'; // always-true predicate if nothing provided
-            }
-            if (SQLSelection.includes(';')) {
-                throw new Error('SQLSelection contains disallowed characters');
-            }
-
-            // escape any double-quotes inside the table name
-            const safeTableName = tableName.replace(/"/g, '""');
-            const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
-            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > ${minOccurences} and POS != """""" ORDER BY random() LIMIT 1`;
-            qestionHolder = database.exec(query);
-        } catch (e) {
-            console.error('QnA: SQL execution error', e);
-            errorText = 'Error: SQL execution failed';
-            //setActiveIndex(State.error);
-            console.log(errorText);
-            return;
-        }
-
-        //if no row is found, set error
-        if (!qestionHolder || !qestionHolder.length || !qestionHolder[0].values.length) {
-            errorText = "Error: No data found in dictionary.db";
-            //setActiveIndex(State.error);
-            console.log(errorText);
-            return;
-        }
-
-        //returns the found values
-        return qestionHolder[0].values[0];
-    }
-
-    static GenerateSQLQuestion(database, wordChoice, minOccurences){
-        this.rows = [];
-        for (let i = 0; i < 4; i++) {
-            let searchOutput = "";
-            let searchOutputText = "";
-            if(runningMyWords && i == 0){
-                searchOutput = this.GenerateQuestionWInput(window.db2, "1=1", 0);
-
-                searchOutputText = this.CheckAnswerValidity(searchOutput);
-            }
-            else{
-                searchOutput = this.GenerateQuestionWInput(database, wordChoice, minOccurences);
-
-                searchOutputText = this.CheckAnswerValidity(searchOutput);
-            }
-
-
-            if (!searchOutput) {
-                errorText = "Error: No word found @ GenerateSQLQuestion";
-                //setActiveIndex(State.error);
-                console.log(errorText);
-                this.question = errorText;
-                return;
-            }
-
-            
-            else if(searchOutputText == false){
-                i--;
-            }
-
-            else if(searchOutputText.length == 0){
-                errorText = "Error: No text found for word@ GenerateSQLQuestion";
-                //setActiveIndex(State.error);
-                console.log(errorText);
-                this.question = errorText;
-                return;
-            }
-
-            else{
-                this.rows[i] = searchOutput;
-                this.answers[i] = this.DeTildeify(searchOutputText, this.rows[0][0]);
-            }
-        }
-
-        let aOrAn = "";
-        if(this.rows[0][0].charAt(0).toLowerCase() === 'a' || this.rows[0][0].charAt(0).toLowerCase() === 'e' || this.rows[0][0].charAt(0).toLowerCase() === 'i' || this.rows[0][0].charAt(0).toLowerCase() === 'o' || this.rows[0][0].charAt(0).toLowerCase() === 'u') {
-            aOrAn = "an";
-        } else {
-            aOrAn = "a";
-        }
-        this.question = "What is " + this.rows[0][0] + "?";
-        this.correctResponse = "the definition of " + aOrAn + " " + this.rows[0][0] + " is";
-    }
-
-    //finds the first good definition of a word.  if no good definition is found, returns false.  This is to avoid bad definitions like "a type of" or "see also"
-    static CheckAnswerValidity(searchOutput){
-        if (!Array.isArray(searchOutput) || searchOutput.length < 4) {
-            console.warn("Invalid search output passed to CheckAnswerValidity:", searchOutput);
-            return false;
-        }
-
-        const word = String(searchOutput[0] || '').toLowerCase();
-        const definition = typeof searchOutput[3] === 'string' ? searchOutput[3] : '';
-
-        if (!definition.trim()) {
-            console.warn("No definition found for word:", searchOutput[0]);
-            return false;
-        }
-
-        const replaceword = definition.toLowerCase()
-            .replaceAll("\\b" + word + "\\b", "~~")
-            .slice(1, -1);
-
-        const splitAnswer = replaceword
-            .split(/[;.]+/)
-            .map(part => part.trim())
-            .filter(part => part.length > 0);
-
-        //filters bad answers
-        //TODO build a better filter
-        for (let i = 0; i < splitAnswer.length; i++) {
-            const tempSplit = splitAnswer[i].split(/\s+/).filter(word => word.length > 0);
-            if(tempSplit.length == 1  || // finds single word answers 
-              (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see" || tempSplit[0] === "see")) || //checks for bad answers in two size strings
-              (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt." || tempSplit[0] === "characterized" || (tempSplit[0] === "one" && tempSplit[1] === "who")))||
-              (tempSplit.length == 4 && (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being"))||
-              (tempSplit.length == 4 && (tempSplit[0] === "in" && tempSplit[3] === "manner"))||
-              (tempSplit.length == 5 && (tempSplit[0] === "in" && tempSplit[1] === "the" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of"))||
-              (splitAnswer[i].length > 150))
-            {
-            }
-            else{
-                const cleanedAnswer = splitAnswer[i].replace(/\s+/g, ' ').trim();
-                const formattedAnswer = cleanedAnswer.charAt(0).toUpperCase() + cleanedAnswer.slice(1);
-                return formattedAnswer + (formattedAnswer.endsWith('.') ? '' : '.');
-            }
-        }
-        return false;
-    }
-    
-    // #region QnA tools
-    //takes a string with ~~ in it and replaces the ~~ with the word, then capitalizes the first letter of the string and returns it (incase the ~~ was at the beginning).
-    static DeTildeify(inputString, word){
-        if (typeof inputString !== 'string') {
-            console.log("DeTildeify received a non-string input:", inputString);
-            return '';
-        }
-        inputString = inputString.replace(/~~/g, word).trim();
-        return inputString.charAt(0).toUpperCase() + inputString.slice(1);
-    }
-
-    //getter for the question field.  TODO is this safe?
-    static getQuestion(){
-        return QnA.question;
-    }
-
-    //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
-    static getWords(){
-        return QnA.rows ? QnA.rows.map(row => row[0]) : [];
-    }
-
-    //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
-    static getAnswers(){
-        return QnA.answers ? [...QnA.answers] : [];
-    }
-
-    //function to chack if a string is equal to the answer.
-    static isCorrectAnswer(answer){
-        try {
-            return answer === QnA.answers[0]; 
-        } catch (e) {
-            errorText = "Error: error, unable to check if answer is correct."
-            setActiveIndex(State.error);
-            return;
-        }
-    }
-    // #endRegion
-}
-
-class localDB {
-
-    static addLine(line) {
-        if (!window.db2) {
-            errorText = "Error: db2 does not exist"
-            return;
-        }
-
-        const selectStmt = window.db2.prepare(
-            `SELECT 1 FROM myWords WHERE Word = ? AND Count = ? AND POS = ? AND Definition = ?`
-        );
-        selectStmt.bind([line[0], line[1], line[2], line[3]]);
-        const exists = selectStmt.step();
-        selectStmt.free();
-
-        if (!exists) {
-            const insertStmt = window.db2.prepare(
-                `INSERT INTO myWords (Word, Count, POS, Definition, NumWrong) VALUES (?, ?, ?, ?, 1)`
-            );
-            insertStmt.run([line[0], line[1], line[2], line[3]]);
-            insertStmt.free();
-        } 
-        
-        else {
-            const updateStmt = window.db2.prepare(
-                `UPDATE myWords SET NumWrong = COALESCE(NumWrong, 0) + 1 WHERE Word = ? AND Count = ? AND POS = ? AND Definition = ?`
-            );
-            updateStmt.run([line[0], line[1], line[2], line[3]]);
-            updateStmt.free();
-        }
-    }
-
-    static stringOfIncorrectWords(dataBase){
-        if (!dataBase) {
-            return "No incorrect wordsDB found";
-        }
-
-        let outputString = "Times Missed:    Word and Definition \n________________________________________\n";
-
-        const tableOutput = dataBase.exec(`SELECT * FROM myWords ORDER BY NumWrong`);
-
-        if (!tableOutput.length || !tableOutput[0].values.length) {
-            return "No incorrect words";
-        }
-
-        const rows = tableOutput[0].values;
-        rows.forEach(element => {
-            outputString += `     ${element[4]}       ${element[0]}: ${element[3]}\n`;
-        });
-
-        return outputString;
-    }
-}
-
 // #region functions-tools
 //Loops the number from start to max
 //No longer needs to be a function but I don't want to replace all uses
@@ -616,27 +339,27 @@ function Form() {
                 
                 <section style={ {display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'flex-start'}}>
                     
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.questionSearchParams = "1=1"; setActiveIndex(State.question)}}>All Words</button>
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("1=1"); setActiveIndex(State.question)}}>All Words</button>
                     
                     <div style = {{width: '10px'}}></div>
 
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.questionSearchParams = "POS = 'a.'"; setActiveIndex(State.question)}}>Adjectives Only</button>
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'a.'"); setActiveIndex(State.question)}}>Adjectives Only</button>
                     
                     <div style = {{width: '10px'}}></div>
 
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.questionSearchParams = "POS = 'adv.'"; setActiveIndex(State.question)}}>Adverbs Only</button>
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'adv.'"); setActiveIndex(State.question)}}>Adverbs Only</button>
                     
                     <div style = {{width: '10px'}}></div>
 
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.questionSearchParams = "POS = 'n.'"; setActiveIndex(State.question)}}>Nouns Only</button>
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'n.'"); setActiveIndex(State.question)}}>Nouns Only</button>
                    
                     <div style = {{width: '10px'}}></div>
                     
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.questionSearchParams = "POS = 'v.'"; setActiveIndex(State.question)}}>Verbs Only</button>
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'v.'"); setActiveIndex(State.question)}}>Verbs Only</button>
                  
                     <div style = {{width: '10px'}}></div>
                     
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.questionSearchParams ="POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.'"; setActiveIndex(State.question)}}>All Verb Types</button>
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.'"); setActiveIndex(State.question)}}>All Verb Types</button>
 
                 </section>
 
@@ -706,6 +429,9 @@ function Form() {
     //CorrectAnswerPanel is the html for the correct answer state
     function CorrectAnswerPanel() {
         streak++;
+        if(runningMyWords === true){
+            localDB.UpdateLineCorrect(QnA.getLine(0), QnA.getAnswers()[0]/*TODO this might not work*/);
+        }
         return (
             <section className="correct-answer-panel" style={styles.menuPanel}>
 
@@ -713,7 +439,7 @@ function Form() {
 
                 <section style={styles.menuPanel}>       
 
-                    <h1> {QnA.correctResponse +":"} </h1>
+                    <h1> {QnA.getCorrectResponse() +":"} </h1>
 
                     <h1>{QnA.getAnswers()[0]}</h1>
 
@@ -738,8 +464,8 @@ function Form() {
             bestStreak = streak;
         }
         streak = 0;
-        localDB.addLine(QnA.rows[0]);
-        localDB.addLine(QnA.rows[selectedIndex]);
+        localDB.UpdateLineIncorrect(QnA.getLine(0), QnA.getAnswers()[0]);
+        localDB.UpdateLineIncorrect(QnA.getLine(selectedIndex), QnA.getAnswers()[selectedIndex]);
         return (
             <section className="wrong-answer-panel" style={styles.menuPanel}>
                             
