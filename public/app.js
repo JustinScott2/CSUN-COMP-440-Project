@@ -429,8 +429,14 @@ function Form() {
     //CorrectAnswerPanel is the html for the correct answer state
     function CorrectAnswerPanel() {
         streak++;
+        let tempButtonText = "Next Word?";
+        let tempOnClick = () => {setActiveIndex(State.question)};
         if(runningMyWords === true){
             localDB.UpdateLineCorrect(QnA.getLine(0), QnA.getAnswers()[0]/*TODO this might not work*/);
+            if(localDB.IsMyWordsEmpty(window.db2)){
+                tempButtonText = "Return to Menu";
+                tempOnClick = () => {runningMyWords = false; setActiveIndex(State.menu)};
+            }
         }
         return (
             <section className="correct-answer-panel" style={styles.menuPanel}>
@@ -447,7 +453,7 @@ function Form() {
 
                 <section style={styles.menuPanel}>
 
-                    <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>
+                    <button style = {styles.playButton} onClick={tempOnClick}>{tempButtonText}</button>
                 
                 </section>
             

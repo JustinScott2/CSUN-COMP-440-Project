@@ -2,21 +2,21 @@ class localDB {
     //only run after checking for db
     static AddLine(line, definition) {
         const insertStmt = window.db2.prepare(
-            `INSERT INTO myWords (Word, Count, POS, Definition, NumWrong) VALUES (?, ?, ?, ?, 1)`
+            `INSERT INTO myWords (Word, Count, POS, Definition, NumWrong, NumRight) VALUES (?, ?, ?, ?, 1, 0)`
         );
         insertStmt.run([line[0], line[1], line[2], definition]);
         insertStmt.free();
     }
     
-    static UpdateLine(line, val, definition) {
+    static UpdateLine(line, statement, definition) {
         const updateStmt = window.db2.prepare(
-            `UPDATE myWords SET NumWrong = COALESCE(NumWrong, 0) + ${val} WHERE Word = ? AND Count = ? AND POS = ? AND Definition = ?`
+            `UPDATE myWords SET ${statement} WHERE Word = ? AND Count = ? AND POS = ? AND Definition = ?`
         );
         updateStmt.run([line[0], line[1], line[2], definition]);
         updateStmt.free();
     }
 
-    static UpdateDB(line, val, definition) {
+    static UpdateDB(line, statement, definition) {
         if (!window.db2) {
             errorText = "Error: db2 does not exist"
             return;
@@ -32,17 +32,17 @@ class localDB {
             this.AddLine(line, definition);
         }
         else{
-            this.UpdateLine(line, val, definition);
+            this.UpdateLine(line, statement, definition);
         }
-        window.db2.run("DELETE FROM myWords WHERE NumWrong = -5");
+        window.db2.run("DELETE FROM myWords WHERE NumRight = 5");
     }
 
     static UpdateLineCorrect(line, definition){
-        this.UpdateDB(line, -1, definition);
+        this.UpdateDB(line, "NumRight = COALESCE(NumRight, 0) + 1", definition);
     }
 
     static UpdateLineIncorrect(line, definition){
-        this.UpdateDB(line, 1, definition);
+        this.UpdateDB(line, "NumWrong = COALESCE(NumWrong, 0) + 1", definition);
     }
 
     static stringOfIncorrectWords(dataBase){
@@ -64,6 +64,14 @@ class localDB {
         });
 
         return outputString;
+    }
+
+    static IsMyWordsEmpty(dataBase){
+        if (!dataBase) {
+            return true;
+        }
+        const tableOutput = dataBase.exec(`SELECT 1 FROM myWords`);
+        return !tableOutput.length || !tableOutput[0].values.length;
     }
 }
 window.localDB = localDB;

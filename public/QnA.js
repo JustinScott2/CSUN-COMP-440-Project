@@ -8,7 +8,6 @@ class QnA {
     static answers = [];
 
     static correctResponse = "";
-    static wrongResponse = "";
 
     static questionSearchParams = "";
     static minOccurences = 8;
@@ -162,7 +161,7 @@ class QnA {
         }
 
         let replaceword = definition.toLowerCase()
-            .replaceAll("\\b" + word + "\\b", "~~").trim();
+            .replaceAll("\\b" + word + "\\b", "~~").replaceAll("alt.","alt").replaceAll("eg.", "eg").replaceAll("ie.", "ie").replaceAll("esp.", "esp").trim();
         if (replaceword.charAt(0) === '"') {
             replaceword = replaceword.slice(1);
         }
@@ -177,15 +176,9 @@ class QnA {
 
         //filters bad answers
         //TODO build a better filter
+        
         for (let i = 0; i < splitAnswer.length; i++) {
-            const tempSplit = splitAnswer[i].split(/\s+/).filter(word => word.length > 0);
-            if(tempSplit.length == 1  || // finds single word answers 
-              (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see" || tempSplit[0] === "see")) || //checks for bad answers in two size strings
-              (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt." || tempSplit[0] === "characterized" || (tempSplit[0] === "one" && tempSplit[1] === "who")))||
-              (tempSplit.length == 4 && (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being"))||
-              (tempSplit.length == 4 && (tempSplit[0] === "in" && tempSplit[3] === "manner"))||
-              (tempSplit.length == 5 && (tempSplit[0] === "in" && tempSplit[1] === "the" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of"))||
-              (splitAnswer[i].length > 150))
+            if(this.TextFilter(splitAnswer[i]))
             {
             }
             else{
@@ -197,6 +190,27 @@ class QnA {
         return false;
     }
     
+    //takes an input string and returns true if it matches any of theb filters
+    static TextFilter(inputString) {
+        const tempSplit = inputString.split(/\s+/).filter(word => word.length > 0);
+        const filters = [ (tempSplit.length == 1), 
+                          (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see" || tempSplit[0] === "the" || tempSplit[0] === "to" || tempSplit[0] === "in" || tempSplit[0] === "for" || tempSplit[0] === "with" || tempSplit[0] === "as" || tempSplit[0] === "by" || tempSplit[0] === "from" || tempSplit[0] === "on" || tempSplit[0] === "at" || tempSplit[0] === "of")), 
+                          (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt" || tempSplit[0] === "characterized" || 
+                                                    (tempSplit[0] === "one" && tempSplit[1] === "who") || 
+                                                    (tempSplit[0] === "diminutive" && tempSplit[1] === "for")||
+                                                    (tempSplit[0] === "see")||
+                                                    (tempSplit[0] === "same" && tempSplit[1] === "as"))), 
+                          (tempSplit.length == 4 && (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being")), 
+                          (tempSplit.length == 4 && ((tempSplit[0] === "in" && tempSplit[3] === "manner")||
+                                                    (tempSplit[0] === "the" && tempSplit[1] === "diminutive" && tempSplit[2] === "for")||
+                                                    (tempSplit[0] === "a" && tempSplit[1] === "type" && tempSplit[2] === "of"))), 
+                          (tempSplit.length == 5 && ((tempSplit[0] === "in" && (tempSplit[2] === "form" || tempSplit[2] === "type" || tempSplit[2] === "manner") && tempSplit[3] === "of")||
+                                                    (tempSplit[0] === "the" && tempSplit[1] === "state" && tempSplit[2] === "of" && tempSplit[3] === "being")||
+                                                    (tempSplit[0] === "of" && tempSplit[1] === "or" && tempSplit[2] === "pertaining" && tempSplit[3] === "to"))),
+                          (inputString.length > 150) ];
+        return filters.some(filter => filter);
+        return true;
+    }
     // #region QnA tools
     //takes a string with ~~ in it and replaces the ~~ with the word, then capitalizes the first letter of the string and returns it (incase the ~~ was at the beginning).
     static DeTildeify(inputString, word){
