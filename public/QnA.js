@@ -58,7 +58,8 @@ class QnA {
             // escape any double-quotes inside the table name
             const safeTableName = tableName.replace(/"/g, '""');
             const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
-            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} and Count > ${minOccurences} and POS != """""" ORDER BY random() LIMIT 1`;
+            const safeMinCount = Number.isFinite(Number(minOccurences)) ? Number(minOccurences) : 0;
+            const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} AND Count >= ${safeMinCount} ORDER BY random() LIMIT 1`;
             qestionHolder = database.exec(query);
         } catch (e) {
             console.error('QnA: SQL execution error', e);

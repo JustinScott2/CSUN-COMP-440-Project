@@ -359,7 +359,7 @@ function Form() {
                  
                     <div style = {{width: '10px'}}></div>
                     
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.'"); setActiveIndex(State.question)}}>All Verb Types</button>
+                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("(POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.')"); setActiveIndex(State.question)}}>All Verb Types</button>
 
                 </section>
 
