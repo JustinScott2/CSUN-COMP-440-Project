@@ -94,7 +94,7 @@ class QnA {
             let searchOutputText = "";
 
             //if we are doing a review game
-            if(runningMyWords && i == 0){
+            if(currentGameMode === gameModes.myWords && i == 0){
                 searchOutput = this.GenerateQuestionWInput(window.db2, "1=1", 0);
             }
 
@@ -135,15 +135,7 @@ class QnA {
                 //this.answers[i] = this.DeTildeify(searchOutputText, this.rows[0][0]);
             }
         }
-
-        let aOrAn = "";
-        if(this.rows[0][0].charAt(0).toLowerCase() === 'a' || this.rows[0][0].charAt(0).toLowerCase() === 'e' || this.rows[0][0].charAt(0).toLowerCase() === 'i' || this.rows[0][0].charAt(0).toLowerCase() === 'o' || this.rows[0][0].charAt(0).toLowerCase() === 'u') {
-            aOrAn = "an";
-        } else {
-            aOrAn = "a";
-        }
-        this.question = "What is " + this.rows[0][0] + "?";
-        this.correctResponse = "the definition of " + aOrAn + " " + this.rows[0][0] + " is";
+        this.setQuestion(this.rows[0][0]);
     }
 
     //finds the first good definition of a word.  if no good definition is found, returns false.  This is to avoid bad definitions like "a type of" or "see also"
@@ -228,6 +220,18 @@ class QnA {
         return this.question;
     }
 
+    static setQuestion(newQuestion){
+        if (typeof newQuestion === 'string') {
+            this.question = "What is " + newQuestion + "?";
+            this.correctResponse = "the definition of " + this.aOrAn(newQuestion) + " " + newQuestion + " is";
+        }
+    }
+    
+    static aOrAn(word) {
+        const vowels = ['a', 'e', 'i', 'o', 'u'];
+        return vowels.includes(word[0].toLowerCase()) ? 'an' : 'a';
+    }
+
     //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
     static getWords(){
         return this.rows ? this.rows.map(row => row[0]) : [];
@@ -236,6 +240,12 @@ class QnA {
     //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
     static getAnswers(){
         return this.answers ? [...this.answers] : [];
+    }
+
+    static setAnswers(answers){
+        if (Array.isArray(answers) && answers.length === 4) {
+            this.answers = [...answers];
+        }
     }
 
     //getter/seter for the questionSearchParams field.

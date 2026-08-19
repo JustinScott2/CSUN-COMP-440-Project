@@ -8,15 +8,85 @@ let bestStreak = 0;
 //records the index of the chosen question so it can be shown in the incorrect screen.
 let selectedIndex = -1;
 
-let runningMyWords = false;
+//#region daily words section.  If more Daily word funtions are added, they should be put in a separate file.
+    async function getDailies() {
+        await window.dbPromise3; // Ensure the database is loaded before generating a question
+        return PullDailyWords(window.db3);
+    }
 
-//TODO add privacy  TODO check if error catchers work
-//OnA is a class that holds the question, the possible answers, words associated with incorect answers and the getting/setting functions for those fields.
-// index |   words           |  answers
-//     0 | word for question | def of question
-//     1 | word for 1        | def of w1
-//     2 | word for 2        | def of w2
-//     3 | word for 3        | def of w3
+    function PullDailyWords(database) {
+
+        //if no db found, move to error state
+        if (!database) {
+            errorText = "Error: Daily Words not found"
+            console.log(errorText);
+            return;
+        }
+
+        //makes a list of tables in the doc that are not metadata, in this case it can only be the dictionary, but could cause issues if another table is added.
+        const tables = database.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+        
+        //if the table has no length or has no values, move to error state.  This will not happen in current version but is good practice.
+        if (!tables.length || !tables[0].values.length) {
+            errorText = "Error: No table found in DailyWords.db" + tables.length + " " + tables[0].values.length;
+            //setActiveIndex(State.error);
+            console.log(errorText);
+            return;
+        }
+
+
+        const today = new Date();
+
+        const yyyy = String(today.getFullYear());
+        const mm = String(today.getMonth() + 1); 
+        const dd = String(today.getDate()); 
+
+        const formattedDate = `${dd}/${mm}/${yyyy}`;
+        const debugDate = "10/10/2026"; //TODO DELETE before release 
+
+        //extracts the name of the first table.  This my not work for multiple tables. 
+        const tableName = tables[0].values[0][0];
+
+        //question holder holds a random line selected from the previously discovered table.
+        let qestionHolder;
+
+        try {
+            // escape any double-quotes inside the table name
+            const safeTableName = tableName.replace(/"/g, '""');
+            const query = `SELECT * FROM "${safeTableName}" WHERE DATE = '${debugDate}' ORDER BY wordOrder`;
+            qestionHolder = database.exec(query);
+        } catch (e) {
+            console.error('QnA: SQL execution error', e);
+            errorText = 'Error: SQL execution failed';
+            //setActiveIndex(State.error);
+            console.log(errorText);
+            return;
+        }
+
+        //if no row is found, set error
+        if (!qestionHolder || !qestionHolder.length || !qestionHolder[0].values.length) {
+            errorText = "Error: No data found in DailyWords.db";
+            //setActiveIndex(State.error);
+            console.log(errorText);
+            return;
+        }
+
+        //returns the found values
+        let returner = [];
+        qestionHolder[0].values.forEach((row, x) => {
+            returner[x] = [row[1], row[4]];
+        });
+        //TODO delete this
+        /*let tempText = "";
+        for (let i = 0; i < returner.length; i++) {
+            if(i<9){
+                tempText += "0"; 
+            }
+            tempText += (i + 1) + "| " + returner[i][0] + ": " + returner[i][1] + "\n";
+        }*/  
+        return returner; 
+    }
+//#endregion
 
 // #region functions-tools
 //Loops the number from start to max
@@ -32,6 +102,12 @@ function pxStringHandler(pxVal, operation) {
     return result + 'px';
 }
 //#endregion
+
+let dailyWords = [];
+getDailies().then(words => {
+    dailyWords = words || [];
+});
+let DWOffset = 0;
 
 const styles = {
     //TODO not sure quite what this does. 
@@ -189,6 +265,13 @@ const State = {
     error: 6
 };
 
+const gameModes = {
+    classic: 0,
+    daily: 1,
+    myWords: 2
+};
+let currentGameMode = gameModes.classic;
+
 //form is the funtion that index actually runs
 function Form() {
 
@@ -276,6 +359,10 @@ function Form() {
     //#region functions for the different states.
     //MenuPanel is the HTML for the menu state
     function MenuPanel() {
+        async function loadDailies() {
+                    dailyWords = await getDailies();
+        }
+        loadDailies();
         return (
             <section style={styles.menuPanel} className="menu-panel">
 
@@ -287,11 +374,11 @@ function Form() {
 
                 <section style={{ display: 'flex', alignItems: 'center' }}>
 
-                    <button style={styles.rowButton} onClick={() => {runningMyWords = true; setActiveIndex(State.myWords)}}>My Words</button>
+                    <button style={styles.rowButton} onClick={() => {currentGameMode = gameModes.myWords; setActiveIndex(State.myWords)}}>My Words</button>
 
                     <div style = {{width: '10px'}}></div>
 
-                    <button style={styles.rowButton} onClick={() => setActiveIndex(State.error)}>Daily Challenge</button>
+                    <button style={styles.rowButton} onClick={() => {currentGameMode = gameModes.daily; setActiveIndex(State.question)}}>Daily Challenge</button>
 
                 </section>
 
@@ -306,7 +393,7 @@ function Form() {
                 
                 {/* this is an if statement that only shows the button if the first condition is true */}
                 {activeIndex !== State.menu && (
-                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; if (runningMyWords === true) { runningMyWords = false;} setActiveIndex(State.menu)}}>Return</button>
+                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; if(currentGameMode === gameModes.daily){DWOffset = 0}; currentGameMode = gameModes.classic; setActiveIndex(State.menu)}}>Return</button>
                 )}
 
                 <button style={styles.settingsButton} onClick={() => setActiveIndex(State.error)}>Settings</button>
@@ -373,20 +460,43 @@ function Form() {
 
     //QuestionPanel is the HTML for the QestionPanel state
     function QuestionPanel() {
-        const [questionContainer, setQuestionContainer] = React.useState(QnA.getQuestion());
+        const [questionContainer, setQuestionContainer] = React.useState('');
         const [buttonContainer, setButtonContainer] = React.useState({
             answers: ['', '', '', ''],
             onPressess: [() => {}, () => {}, () => {}, () => {}]
         });
-
+        
         React.useEffect(() => {
             let mounted = true;
+
             async function loadQuestion() {
+                if (currentGameMode === gameModes.daily) {
+                    if (!mounted || !dailyWords) return;
+                    QnA.setQuestion(dailyWords[DWOffset][0]);
+                    QnA.setAnswers([
+                        dailyWords[DWOffset][1],
+                        dailyWords[DWOffset + 1][1],
+                        dailyWords[DWOffset + 2][1],
+                        dailyWords[DWOffset + 3][1]
+                    ]);
+                    QnA.setRows([
+                        [dailyWords[DWOffset][0], "X", "X", dailyWords[DWOffset][1]],
+                        [dailyWords[DWOffset + 1][0], "X", "X", dailyWords[DWOffset + 1][1]],
+                        [dailyWords[DWOffset + 2][0], "X", "X", dailyWords[DWOffset + 2][1]],
+                        [dailyWords[DWOffset + 3][0], "X", "X", dailyWords[DWOffset + 3][1]]
+                    ]);
+                    console.log(dailyWords[DWOffset][0] + ": " + dailyWords[DWOffset][1] + "\n" + dailyWords[DWOffset + 1][0] + ": " + dailyWords[DWOffset + 1][1] + "\n" + dailyWords[DWOffset + 2][0] + ": " + dailyWords[DWOffset + 2][1] + "\n" + dailyWords[DWOffset + 3][0] + ": " + dailyWords[DWOffset + 3][1]);
+                    setQuestionContainer(QnA.getQuestion());
+                    setButtonContainer(giveQuestionValues());
+                    return;
+                }
+
                 await QnA.generateQuestion();
                 if (!mounted) return;
                 setQuestionContainer(QnA.getQuestion());
                 setButtonContainer(giveQuestionValues());
             }
+
             loadQuestion();
             return () => { mounted = false; };
         }, []);
@@ -431,11 +541,11 @@ function Form() {
         streak++;
         let tempButtonText = "Next Word?";
         let tempOnClick = () => {setActiveIndex(State.question)};
-        if(runningMyWords === true){
+        if(currentGameMode === gameModes.myWords){
             localDB.UpdateLineCorrect(QnA.getLine(0), QnA.getAnswers()[0]/*TODO this might not work*/);
             if(localDB.IsMyWordsEmpty(window.db2)){
                 tempButtonText = "Return to Menu";
-                tempOnClick = () => {runningMyWords = false; setActiveIndex(State.menu)};
+                tempOnClick = () => {currentGameMode = gameModes.classic; setActiveIndex(State.menu)};
             }
         }
         return (
@@ -453,7 +563,7 @@ function Form() {
 
                 <section style={styles.menuPanel}>
 
-                    <button style = {styles.playButton} onClick={tempOnClick}>{tempButtonText}</button>
+                    <button style = {styles.playButton} onClick={() => {tempOnClick(); if(currentGameMode === gameModes.daily){DWOffset += 4}}}>{tempButtonText}</button>
                 
                 </section>
             
@@ -487,7 +597,7 @@ function Form() {
         
                 <section style={{ display: 'flex', alignItems: 'center' }}>
         
-                    <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Next Word?</button>  
+                    <button style = {styles.playButton} onClick={() => {setActiveIndex(State.question); if(currentGameMode === gameModes.daily){DWOffset += 4}}}>Next Word?</button>  
         
                 </section>
             

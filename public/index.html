@@ -53,6 +53,12 @@
                 console.error('Failed to load dictionary.db', err);
                 throw err;
             });
+            window.dbPromise3 = initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+            }).then(SQL => fetch('DailyWords.db')
+                .then(res => {if (!res.ok) { throw new Error('Failed to fetch DailyWords.db: ' + res.status);} return res.arrayBuffer();})
+                .then(buf => { window.SQL = SQL; window.db3 = new SQL.Database(new Uint8Array(buf)); return window.db3; }))
+                .catch(err => {console.error('Failed to load DailyWords.db', err); throw err;});
         </script>
         <!-- setup react root component and render the app -->
         <script src="QnA.js"></script>
