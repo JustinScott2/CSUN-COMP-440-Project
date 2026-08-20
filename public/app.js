@@ -8,6 +8,8 @@ let bestStreak = 0;
 //records the index of the chosen question so it can be shown in the incorrect screen.
 let selectedIndex = -1;
 
+let dailyScore = 0;
+
 //#region daily words section.  If more Daily word funtions are added, they should be put in a separate file.
     async function getDailies() {
         await window.dbPromise3; // Ensure the database is loaded before generating a question
@@ -148,6 +150,32 @@ const styles = {
         marginTop: '10px'
     },
 
+    settingsWrapper: {
+        position: 'relative',
+        marginLeft: 'auto',
+    },
+
+    //TODO verify
+    menuStyle: {
+        position: 'absolute',  
+        top: '100%',
+        left: 0,
+        zIndex: 10,           
+        width: '80px',
+        boxSizing: 'border-box',
+        margin: 0,
+        padding: 0,
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    },
+
+    itemStyle: {
+        width: '100%',
+        boxSizing: 'border-box',
+        padding: '8px 8px',
+        cursor: 'pointer',
+        display: 'block',
+    },
+
     //style for the back button
     backButton: {
         width: "80px",
@@ -244,7 +272,7 @@ const styles = {
     },
     //#endregion
 
-    questionTypeButtion: {
+    questionTypeButton: {
         width: "600px",
         get height() { return pxStringHandler(this.width, (val) => val / 4); },
         get minWidth() { return this.width; },
@@ -262,7 +290,8 @@ const State = {
     wrongAnswer: 3,
     chooseQuestion: 4,
     myWords: 5,
-    error: 6
+    dailyEnd: 6,
+    error: 7
 };
 
 const gameModes = {
@@ -277,6 +306,13 @@ function Form() {
 
     //creates the activeindex variable
     const [activeIndex, setActiveIndex] = React.useState(State.menu);
+
+    //#region dropdown menu functions
+
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const toggleDropdown = () => setIsOpen(!isOpen);
+    //#endregion
 
     //TODO add mechanism to save the question text and answer text to a higher level, so that it can be used in the correct/wrong answer panels
     //TODO add a mechanism to save the user's score for next time
@@ -343,6 +379,15 @@ function Form() {
             );
         break;
 
+        case State.dailyEnd:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <DailyEndPanel></DailyEndPanel>
+                </React.Fragment>
+            );
+        break;
+
         default:
             content = (
                 <React.Fragment>
@@ -360,7 +405,7 @@ function Form() {
     //MenuPanel is the HTML for the menu state
     function MenuPanel() {
         async function loadDailies() {
-                    dailyWords = await getDailies();
+            dailyWords = await getDailies();
         }
         loadDailies();
         return (
@@ -393,11 +438,20 @@ function Form() {
                 
                 {/* this is an if statement that only shows the button if the first condition is true */}
                 {activeIndex !== State.menu && (
-                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; if(currentGameMode === gameModes.daily){DWOffset = 0}; currentGameMode = gameModes.classic; setActiveIndex(State.menu)}}>Return</button>
+                    <button style={styles.backButton} onClick={() => {if(streak > bestStreak){bestStreak = streak}; streak=0; if(currentGameMode === gameModes.daily){DWOffset = 0; dailyScore = 0}; currentGameMode = gameModes.classic; setActiveIndex(State.menu)}}>Return</button>
                 )}
 
-                <button style={styles.settingsButton} onClick={() => setActiveIndex(State.error)}>Settings</button>
+                <div style={styles.settingsWrapper}>
+                    <button style={styles.settingsButton} onClick={toggleDropdown}>Settings</button>
 
+                    {isOpen && (
+                        <ul style={styles.menuStyle}>
+                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 1</li>
+                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 2</li>
+                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 3</li>
+                        </ul>
+                    )}
+                </div>
             </section>
         );
     }
@@ -426,27 +480,27 @@ function Form() {
                 
                 <section style={ {display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'flex-start'}}>
                     
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("1=1"); setActiveIndex(State.question)}}>All Words</button>
+                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("1=1"); setActiveIndex(State.question)}}>All Words</button>
                     
                     <div style = {{width: '10px'}}></div>
 
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'a.'"); setActiveIndex(State.question)}}>Adjectives Only</button>
+                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'a.'"); setActiveIndex(State.question)}}>Adjectives Only</button>
                     
                     <div style = {{width: '10px'}}></div>
 
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'adv.'"); setActiveIndex(State.question)}}>Adverbs Only</button>
+                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'adv.'"); setActiveIndex(State.question)}}>Adverbs Only</button>
                     
                     <div style = {{width: '10px'}}></div>
 
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'n.'"); setActiveIndex(State.question)}}>Nouns Only</button>
+                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'n.'"); setActiveIndex(State.question)}}>Nouns Only</button>
                    
                     <div style = {{width: '10px'}}></div>
                     
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("POS = 'v.'"); setActiveIndex(State.question)}}>Verbs Only</button>
+                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'v.'"); setActiveIndex(State.question)}}>Verbs Only</button>
                  
                     <div style = {{width: '10px'}}></div>
                     
-                    <button style={styles.questionTypeButtion} onClick={() => {QnA.setSearchParam("(POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.')"); setActiveIndex(State.question)}}>All Verb Types</button>
+                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("(POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.')"); setActiveIndex(State.question)}}>All Verb Types</button>
 
                 </section>
 
@@ -485,7 +539,6 @@ function Form() {
                         [dailyWords[DWOffset + 2][0], "X", "X", dailyWords[DWOffset + 2][1]],
                         [dailyWords[DWOffset + 3][0], "X", "X", dailyWords[DWOffset + 3][1]]
                     ]);
-                    console.log(dailyWords[DWOffset][0] + ": " + dailyWords[DWOffset][1] + "\n" + dailyWords[DWOffset + 1][0] + ": " + dailyWords[DWOffset + 1][1] + "\n" + dailyWords[DWOffset + 2][0] + ": " + dailyWords[DWOffset + 2][1] + "\n" + dailyWords[DWOffset + 3][0] + ": " + dailyWords[DWOffset + 3][1]);
                     setQuestionContainer(QnA.getQuestion());
                     setButtonContainer(giveQuestionValues());
                     return;
@@ -537,8 +590,8 @@ function Form() {
     //TODO add a mechanism to save the user's score for next time, and show it in the correct/wrong answer panels
 
     //CorrectAnswerPanel is the html for the correct answer state
+
     function CorrectAnswerPanel() {
-        streak++;
         let tempButtonText = "Next Word?";
         let tempOnClick = () => {setActiveIndex(State.question)};
         if(currentGameMode === gameModes.myWords){
@@ -576,10 +629,6 @@ function Form() {
 
     //WrongAnswerPanel is the html for the wrong answer state
     function WrongAnswerPanel() {
-        if(streak > bestStreak){
-            bestStreak = streak;
-        }
-        streak = 0;
         localDB.UpdateLineIncorrect(QnA.getLine(0), QnA.getAnswers()[0]);
         localDB.UpdateLineIncorrect(QnA.getLine(selectedIndex), QnA.getAnswers()[selectedIndex]);
         return (
@@ -636,6 +685,32 @@ function Form() {
         }
     }
 
+        //TODO show the correct answer in the correct/wrong answer panels
+    //TODO add a mechanism to save the user's score for next time, and show it in the correct/wrong answer panels
+
+    //DailyEndPanel is the html for the state shown when you finish the daily challenge
+    function DailyEndPanel() {
+        return (
+            <section className="daily-end-panel" style={styles.menuPanel}>
+
+                <h1 style = {styles.title}>Daily Challenge Complete!</h1>
+
+                <section style={styles.menuPanel}>       
+
+                    <h1> You scored: {dailyScore}/10 </h1>
+
+                </section>
+
+                <section style={styles.menuPanel}>
+
+                    <button style = {styles.playButton} onClick={() => {setActiveIndex(State.menu);}}>Return to Menu</button>
+                
+                </section>
+            
+            </section>
+        );
+    }
+
     //this funtion makes an object that holds 2 arrays of 4, the answers and their associated buttions, where answers[0] is associated with onPresses[0]
 
     function giveQuestionValues(){
@@ -648,11 +723,24 @@ function Form() {
         for(let i = 0; i < 4; i++){
             container.answers[wrapAround(i, randomNum, 4)] = localAnswers[i];
             if(i === 0){
-                container.onPressess[wrapAround(i, randomNum, 4)] = (() => {setActiveIndex(State.correctAnswer); selectedIndex = i});
+                container.onPressess[wrapAround(i, randomNum, 4)] = (() => {  if(currentGameMode === gameModes.daily && DWOffset > 35/*10 * 9 - 1 */){setActiveIndex(State.dailyEnd);}
+                                                                              else setActiveIndex(State.correctAnswer); 
+                                                                              selectedIndex = i; 
+                                                                              streak++
+                                                                              dailyScore++;
+                                                                            }
+                                                                    );
             }
 
             else{
-                container.onPressess[wrapAround(i, randomNum, 4)] = (() => {setActiveIndex(State.wrongAnswer); selectedIndex = i});
+                container.onPressess[wrapAround(i, randomNum, 4)] = (() => {  setActiveIndex(State.wrongAnswer); 
+                                                                              selectedIndex = i; 
+                                                                              if(streak > bestStreak){
+                                                                                  bestStreak = streak;
+                                                                              }
+                                                                              streak = 0;
+                                                                            }
+                                                                    );
             }
         }
         
