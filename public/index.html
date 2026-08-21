@@ -1,22 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <!--TODO V-->
         <meta charset="UTF-8">
-        <!--TODO V-->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.8">
-        <title>Bibloguesser - 0.1</title>
-        <!--TODO V-->
+        <title>Bibloguesser - 0.9</title>
         <link rel="stylesheet" href="styles.css">
     </head>
 
     <body>
-        <!-- add a container, where you want to include react components -->
         <div id="injected-react-content"></div>
 
-        <!-- import the react libraray -->
-        <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-        <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+        <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
+        <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
         <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
@@ -60,7 +55,7 @@
                 .then(buf => { window.SQL = SQL; window.db3 = new SQL.Database(new Uint8Array(buf)); return window.db3; }))
                 .catch(err => {console.error('Failed to load DailyWords.db', err); throw err;});
         </script>
-        <!-- setup react root component and render the app -->
+
         <script src="QnA.js"></script>
         <script src="localDB.js"></script>
         <script type="text/babel" src="app.js"></script>

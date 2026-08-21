@@ -1,30 +1,34 @@
 class QnA {
-    //TODO replace all with rows
     //ex. What is an apple?
     static question = "";
 
+    //the raw output from the file. Formatted Word,Count,POS,Definition and four long, where 0 is the correct set. used for the raw data and to pull the words
     static rows = [];
-    //ex. red fruit, orange fruit, green fruit, yellow fruit
+    
+    //formatted defintions for the words.
     static answers = [];
 
+    //var that holds the text for correct responses.
     static correctResponse = "";
 
+    //var that holds what is being searched for.  This is the main way the different classic ways are separated
     static questionSearchParams = "";
+
+    //var that tells the search to ignore word-def combos that appear in less than this amount of dictionaries.
     static minOccurences = 8;
 
-    //curent call to generate a question, will be reworked in the game modes update
+    //wrapper for generating questions
     static async generateQuestion() {
         await window.dbPromise; // Ensure the database is loaded before generating a question
         await this.GenerateSQLQuestion(window.db, this.questionSearchParams, this.minOccurences);
     }
 
-    //pulls a random line from the db and adds the word to question field.
+    //Takes an input selection and finds a row that matches.
     static GenerateQuestionWInput(database, SQLSelection, minOccurences) {
 
         //if no db found, move to error state
         if (!database) {
             errorText = "Error: Dictionary not found"
-            //setActiveIndex(State.error);
             console.log(errorText);
             return;
         }
@@ -35,7 +39,6 @@ class QnA {
         //if the table has no length or has no values, move to error state.  This will not happen in current version but is good practice.
         if (!tables.length || !tables[0].values.length) {
             errorText = "Error: No table found in dictionary.db" + tables.length + " " + tables[0].values.length;
-            //setActiveIndex(State.error);
             console.log(errorText);
             return;
         }
@@ -49,7 +52,7 @@ class QnA {
         try {
             // basic validation/sanitization for the incoming SQLSelection
             if (typeof SQLSelection !== 'string' || !SQLSelection.trim()) {
-                SQLSelection = '1'; // always-true predicate if nothing provided
+                SQLSelection = '1';
             }
             if (SQLSelection.includes(';')) {
                 throw new Error('SQLSelection contains disallowed characters');
@@ -57,14 +60,15 @@ class QnA {
 
             // escape any double-quotes inside the table name
             const safeTableName = tableName.replace(/"/g, '""');
+            // Sanitizes the query 
             const selection = SQLSelection.replace(/POS\s*=\s*'([^']+)'/i, (match, val) => `REPLACE(POS, '"', '') = '${val}'`);
+            //sanitizes minOccurences
             const safeMinCount = Number.isFinite(Number(minOccurences)) ? Number(minOccurences) : 0;
             const query = `SELECT * FROM "${safeTableName}" WHERE ${selection} AND Count >= ${safeMinCount} ORDER BY random() LIMIT 1`;
             qestionHolder = database.exec(query);
         } catch (e) {
             console.error('QnA: SQL execution error', e);
             errorText = 'Error: SQL execution failed';
-            //setActiveIndex(State.error);
             console.log(errorText);
             return;
         }
@@ -72,7 +76,6 @@ class QnA {
         //if no row is found, set error
         if (!qestionHolder || !qestionHolder.length || !qestionHolder[0].values.length) {
             errorText = "Error: No data found in dictionary.db";
-            //setActiveIndex(State.error);
             console.log(errorText);
             return;
         }
@@ -81,12 +84,13 @@ class QnA {
         return qestionHolder[0].values[0];
     }
 
+    //finds four good lines
     static GenerateSQLQuestion(database, wordChoice, minOccurences){
-        //zero out rows
-        this.rows = [];
-        this.answers = [];
+        //zero out rows and answers
+        this.setRows([]);
+        this.setAnswers([]);
 
-        //runs until four valid answers that are not invalid are found
+        //runs until four answers that are not invalid are found
         for (let i = 0; i < 4; i++) {
 
             //temporary vars to hold outputs
@@ -106,9 +110,7 @@ class QnA {
             //if no db response is found, set error
             if (!searchOutput) {
                 errorText = "Error: No word found @ GenerateSQLQuestion";
-                //setActiveIndex(State.error);
                 console.log(errorText);
-                this.question = errorText;
                 return;
             }
             
@@ -123,16 +125,14 @@ class QnA {
             //if answer is valid but empty, set error
             else if(searchOutputText.length == 0){
                 errorText = "Error: No text found for word@ GenerateSQLQuestion";
-                //setActiveIndex(State.error);
                 console.log(errorText);
                 this.question = errorText;
                 return;
             }
 
             else{
-                this.rows[i] = searchOutput;
-                this.answers[i] = searchOutputText;
-                //this.answers[i] = this.DeTildeify(searchOutputText, this.rows[0][0]);
+                this.setLine(searchOutput, i);
+                this.setAnswer(searchOutputText, i);
             }
         }
         this.setQuestion(this.rows[0][0]);
@@ -140,6 +140,8 @@ class QnA {
 
     //finds the first good definition of a word.  if no good definition is found, returns false.  This is to avoid bad definitions like "a type of" or "see also"
     static CheckAnswerValidity(searchOutput){
+
+        //checks for invalid input type.
         if (!Array.isArray(searchOutput) || searchOutput.length < 4) {
             console.warn("Invalid search output passed to CheckAnswerValidity:", searchOutput);
             return false;
@@ -148,28 +150,40 @@ class QnA {
         const word = String(searchOutput[0] || '').toLowerCase();
         const definition = typeof searchOutput[3] === 'string' ? searchOutput[3] : '';
 
+        //error check for no definition
         if (!definition.trim()) {
             console.warn("No definition found for word:", searchOutput[0]);
             return false;
         }
 
+        //removes period from common abbreviations
         let replaceword = definition.toLowerCase()
-            .replaceAll("\\b" + word + "\\b", "~~").replaceAll("alt.","alt").replaceAll("eg.", "eg").replaceAll("ie.", "ie").replaceAll("esp.", "esp").trim();
+                                    .replaceAll("\\b" + word + "\\b", "~~")
+                                    .replaceAll("alt.","alt")
+                                    .replaceAll("eg.", "eg")
+                                    .replaceAll("ie.", "ie")
+                                    .replaceAll("esp.", "esp")
+                                    .replaceAll(" n."," n")
+                                    .replaceAll("(n.","(n")
+                                    .trim();
+
+        //removes first char if it is a ".                            
         if (replaceword.charAt(0) === '"') {
             replaceword = replaceword.slice(1);
         }
+        
+        //removes last char if it is a ;.  
         if (replaceword.charAt(replaceword.length - 1) === ';') {
             replaceword = replaceword.slice(0, -1).trim();
         }
 
+        //splits the defitions into single definitions
         const splitAnswer = replaceword
             .split(/[;.]+/)
             .map(part => part.trim())
             .filter(part => part.length > 0);
 
-        //filters bad answers
-        //TODO build a better filter
-        
+        //filters out bad answers
         for (let i = 0; i < splitAnswer.length; i++) {
             if(this.TextFilter(splitAnswer[i]))
             {
@@ -183,11 +197,11 @@ class QnA {
         return false;
     }
     
-    //takes an input string and returns true if it matches any of theb filters
+    //takes an input string and returns true if it matches any of theb filters.  There is probably a better way but I could not find it.
     static TextFilter(inputString) {
         const tempSplit = inputString.split(/\s+/).filter(word => word.length > 0);
         const filters = [ (tempSplit.length == 1), 
-                          (tempSplit.length == 2 && (tempSplit[0] === "a" || tempSplit[0] === "an" || tempSplit[0] === "of" || tempSplit[0] === "see" || tempSplit[0] === "the" || tempSplit[0] === "to" || tempSplit[0] === "in" || tempSplit[0] === "for" || tempSplit[0] === "with" || tempSplit[0] === "as" || tempSplit[0] === "by" || tempSplit[0] === "from" || tempSplit[0] === "on" || tempSplit[0] === "at" || tempSplit[0] === "of")), 
+                          (tempSplit.length == 2), 
                           (tempSplit.length == 3 && (tempSplit[0] === "pertaining" || tempSplit[0] === "alt" || tempSplit[0] === "characterized" || 
                                                     (tempSplit[0] === "one" && tempSplit[1] === "who") || 
                                                     (tempSplit[0] === "diminutive" && tempSplit[1] === "for")||
@@ -202,9 +216,10 @@ class QnA {
                                                     (tempSplit[0] === "of" && tempSplit[1] === "or" && tempSplit[2] === "pertaining" && tempSplit[3] === "to"))),
                           (inputString.length > 150) ];
         return filters.some(filter => filter);
-        return true;
     }
+
     // #region QnA tools
+
     //takes a string with ~~ in it and replaces the ~~ with the word, then capitalizes the first letter of the string and returns it (incase the ~~ was at the beginning).
     static DeTildeify(inputString, word){
         if (typeof inputString !== 'string') {
@@ -215,7 +230,6 @@ class QnA {
         return inputString.charAt(0).toUpperCase() + inputString.slice(1);
     }
 
-    //getter for the question field.  TODO is this safe?
     static getQuestion(){
         return this.question;
     }
@@ -232,12 +246,10 @@ class QnA {
         return vowels.includes(word[0].toLowerCase()) ? 'an' : 'a';
     }
 
-    //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
     static getWords(){
         return this.rows ? this.rows.map(row => row[0]) : [];
     }
 
-    //getter for the answers field.  Unpacks it into an array for safety.  TODO is this safe
     static getAnswers(){
         return this.answers ? [...this.answers] : [];
     }
@@ -248,7 +260,14 @@ class QnA {
         }
     }
 
-    //getter/seter for the questionSearchParams field.
+    static setAnswer(answer, index){
+        if (index >= 0 && index < 4) {
+            this.answers[index] = answer;
+        } else {
+            console.warn("setAnswer: index out of bounds: ", index);
+        }
+    }
+    
     static setSearchParam(param){
         this.questionSearchParams = param;
     }
@@ -266,7 +285,7 @@ class QnA {
     }
 
     static setLine(line, index){
-        if (index >= 0 && index < this.rows.length) {
+        if (index >= 0 && index < 4) {
             this.rows[index] = line;
         } else {
             console.warn("setLine: index out of bounds", index);
@@ -285,25 +304,8 @@ class QnA {
     static getCorrectResponse(){
         return this.correctResponse;
     }
-
     // #endRegion
 }
 
 window.QnA = QnA;
 globalThis.QnA = QnA;
-/*
-    //function to chack if a string is equal to the answer.
-    export static isCorrectAnswer(answer){
-        try {
-            return answer === QnA.answers[0]; 
-        } catch (e) {
-            errorText = "Error: error, unable to check if answer is correct."
-            setActiveIndex(State.error);
-            return;
-        }
-    }
-
-
-
-
-*/
