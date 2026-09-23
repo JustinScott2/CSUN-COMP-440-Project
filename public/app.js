@@ -1,118 +1,6 @@
 //errorText holds a string that diplayed when a failed screen transition happens 
 let errorText = "Error: no matching state";
 
-//Streak is a class that manages the streak andn bestStreak vars
-class Streak {
-    static streak = 0;
-    static bestStreak = 0;
-
-    static GetStreak(){
-        return this.streak;
-    }
-    static IncrementStreak(){
-        this.streak++;
-        this.UpdateBestStreak(this.GetStreak());
-    }
-    static ZeroStreak(){
-        this.UpdateBestStreak(this.GetStreak());
-        this.streak = 0;
-    }
-    static UpdateBestStreak(val){
-        if(val > this.bestStreak)
-        {
-            this.bestStreak = val;
-        }
-    }
-    static GetBestStreak(){
-        return this.bestStreak;
-    }
-}
-
-//records the index of the chosen question so it can be shown in the incorrect screen.
-let selectedIndex = -1;
-
-//#region daily words section.  If more Daily word funtions are added, they should be put in a separate file.
-    //array that holds the 40 dail words and their definition.  2x40
-    let dailyWords = [];
-
-    //DWOffset tells you how deep you are in the daily questions.  it is incremented by 4 at a time.
-    let DWOffset = 0;
-
-    //Variable to track how many of the daily scores you got
-    let dailyScore = 0;
-
-    //wrapper for PullDailyWords to make it safer
-    async function getDailies() {
-        await window.dbPromise3;
-        dailyWords = PullDailyWords(window.db3) || [];
-    }
-
-    //funtion that takes the in-mem db and turns it into an array.
-    function PullDailyWords(database) {
-
-        //if no db found, move to error state
-        if (!database) {
-            errorText = "Error: Daily Words not found"
-            console.log(errorText);
-            return;
-        }
-
-        //makes a list of tables in the doc that are not metadata, in this case it can only be the dictionary, but could cause issues if another table is added.
-        const tables = database.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-        
-        //if the table has no length or has no values give error.  This will not happen in current version but is good practice.
-        if (!tables.length || !tables[0].values.length) {
-            errorText = "Error: No table found in DailyWords.db" + tables.length + " " + tables[0].values.length;
-            console.log(errorText);
-            return;
-        }
-
-        const today = new Date();
-
-        const yyyy = String(today.getFullYear());
-        const mm = String(today.getMonth() + 1); 
-        const dd = String(today.getDate()); 
-
-        const formattedDate = `${dd}/${mm}/${yyyy}`;
-        const debugDate = "10/10/2026"; //TODO DELETE before full release 
-
-        //extracts the name of the first table.  This my not work for multiple tables. 
-        const tableName = tables[0].values[0][0];
-
-        //question holder is the var that holds the raw output.
-        let qestionHolder;
-
-        try {
-            //escape any double-quotes inside the table name
-            const safeTableName = tableName.replace(/"/g, '""');
-            const query = `SELECT * FROM "${safeTableName}" WHERE DATE = '${debugDate}' ORDER BY wordOrder`;
-            qestionHolder = database.exec(query);
-        } catch (e) {
-            console.error('QnA: SQL execution error', e);
-            errorText = 'Error: SQL execution failed';
-            console.log(errorText);
-            return;
-        }
-
-        //if no data is found, set error
-        if (!qestionHolder || !qestionHolder.length || !qestionHolder[0].values.length) {
-            errorText = "Error: No data found in DailyWords.db";
-            console.log(errorText);
-            return;
-        }
-
-        //returns the found values in a 2x40 format
-        let returner = [];
-        qestionHolder[0].values.forEach((row, x) => {
-            returner[x] = [row[1], row[4]];
-        });
-        return returner; 
-    }    
-    
-    //runs the functions
-    getDailies();
-//#endregion
-
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
 function pxStringHandler(pxVal, operation) {
@@ -122,6 +10,7 @@ function pxStringHandler(pxVal, operation) {
 }
 //#endregion
 
+//I left all the states from BG
 const styles = {
     appShell: {
         minHeight: '100vh',
@@ -294,23 +183,11 @@ const styles = {
 //This object represents an enum for the different program states.
 const State = {
     menu: 0,
-    question: 1,
-    correctAnswer: 2,
-    wrongAnswer: 3,
-    chooseQuestion: 4,
-    myWords: 5,
-    dailyEnd: 6,
-    error: 7
-};
-
-//This object represents an enum for the different game modes.
-const gameModes = {
-    classic: 0,
-    daily: 1,
-    myWords: 2
-};
-
-let currentGameMode = gameModes.classic;
+    login: 1,
+    validLogin: 2,
+    invalidLogin: 3,
+    createAccount: 4
+}
 
 //form is the funtion that index actually runs
 function Form() {
@@ -337,64 +214,38 @@ function Form() {
                 </React.Fragment>
             );
         break;
-        
-        case State.question:
+        case State.login:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <QuestionPanel></QuestionPanel>
-                <StreakPanel></StreakPanel>
+                <LoginPanel></LoginPanel>
                 </React.Fragment>
             );
         break;
-
-        case State.correctAnswer:
-            content = (        
-                <React.Fragment>
-                <ControlPanel></ControlPanel>
-                <CorrectAnswerPanel></CorrectAnswerPanel>
-                <StreakPanel></StreakPanel>
-                </React.Fragment>
-            );
-        break;
-
-        case State.wrongAnswer:
+        case State.validLogin:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <WrongAnswerPanel></WrongAnswerPanel>
-                <StreakPanel></StreakPanel>
+                <ValidLoginPanel></ValidLoginPanel>
                 </React.Fragment>
             );
         break;
-
-        case State.chooseQuestion://state for panel that lets you choose what selection of words you choose from
+        case State.invalidLogin:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <ChooseQuestionTypePanel></ChooseQuestionTypePanel>
+                <InvalidLoginPanel></InvalidLoginPanel>
                 </React.Fragment>
             );
         break;
-
-        case State.myWords://state for seeing the words you got incorrect.
+        case State.createAccount:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <MyWordsPanel></MyWordsPanel>
+                <CreateAccountPanel></CreateAccountPanel>
                 </React.Fragment>
             );
         break;
-
-        case State.dailyEnd://special page for when you have completed all of the daily words.
-            content = (
-                <React.Fragment>
-                <ControlPanel></ControlPanel>
-                <DailyEndPanel></DailyEndPanel>
-                </React.Fragment>
-            );
-        break;
-
         default:
             content = (
                 <React.Fragment>
@@ -409,330 +260,91 @@ function Form() {
  
     //#region functions for the different states.
 
+    //ControlPanel is the HTML for the control panel state, ie the options bar at the top.
+        function ControlPanel() {
+            return (
+                <section style={styles.optionsPanel} className="control-panel">
+                    
+                    {activeIndex !== State.menu && (
+                        <button style={styles.backButton} onClick={() => {setActiveIndex(State.menu)}}>Return</button>
+                    )}
+
+                    <div style={styles.settingsWrapper}>
+                        <button style={styles.settingsButton} onClick={toggleDropdown}>Settings</button>
+
+                        {/* TODO make this do the things when visual update is started*/}
+                        {isOpen && (
+                            <ul style={styles.menuStyle}>
+                                <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 1</li>
+                                <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 2</li>
+                                <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 3</li>
+                            </ul>
+                        )}
+                    </div>
+                </section>
+            );
+        }
+
     //MenuPanel is the HTML for the menu state
     function MenuPanel() {
         return (
             <section style={styles.menuPanel} className="menu-panel">
 
-                <h2 style={styles.title}>Biblioguesser</h2>
+                <h2 style={styles.title}>Temp Menu Text</h2>
 
-                <h3 style={styles.subtitle}>How big is your lexicon?</h3>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}>Login</button>
 
-                <button style={styles.playButton} onClick={() => {currentGameMode = gameModes.classic; setActiveIndex(State.chooseQuestion)}}>PLAY!</button>
-
-                <section style={{ display: 'flex', alignItems: 'center' }}>
-
-                    <button style={styles.rowButton} onClick={() => {currentGameMode = gameModes.myWords; setActiveIndex(State.myWords)}}>My Words</button>
-
-                    <div style = {{width: '10px'}}></div>
-
-                    <button style={styles.rowButton} onClick={() => {currentGameMode = gameModes.daily; setActiveIndex(State.question)}}>Daily Challenge</button>
-
-                </section>
-
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>create account</button>
             </section>
         );
     }
 
-    //ControlPanel is the HTML for the control panel state, ie the options bar at the top.
-    function ControlPanel() {
+    function LoginPanel() {
         return (
-            <section style={styles.optionsPanel} className="control-panel">
-                
-                {activeIndex !== State.menu && (
-                    <button style={styles.backButton} onClick={() => {Streak.ZeroStreak(); if(currentGameMode === gameModes.daily){DWOffset = 0; dailyScore = 0}; setActiveIndex(State.menu)}}>Return</button>
-                )}
+            <section style={styles.menuPanel} className="login-panel">
 
-                <div style={styles.settingsWrapper}>
-                    <button style={styles.settingsButton} onClick={toggleDropdown}>Settings</button>
+                <h2 style={styles.title}>Temp Login Page</h2>
 
-                    {/* TODO make this do the things when visual update is started*/}
-                    {isOpen && (
-                        <ul style={styles.menuStyle}>
-                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 1</li>
-                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 2</li>
-                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 3</li>
-                        </ul>
-                    )}
-                </div>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}>correct login</button>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.invalidLogin)}}>incorrect login</button>
             </section>
         );
     }
 
-    //StreakPanel is the HTML for the streak panel state, ie the streak text at the bottom.
-    function StreakPanel() {
+    function ValidLoginPanel() {
         return (
-            <section style={styles.StreakPanel} className="streak-panel">
+            <section style={styles.menuPanel} className="ValidLogin-panel">
 
-                <p>Streak: {Streak.GetStreak()}</p>
-                
-                {activeIndex == State.wrongAnswer && (
-                    <p>Best Streak: {Streak.GetBestStreak()}</p>
-                )}
+                <h2 style={styles.title}>Temp correct login Page</h2>
+
+                <button style={styles.playButton} onClick={() => {}}>temp button</button>
 
             </section>
         );
     }
 
-    //chooseQuestionPanel is the HTML for the choose question panel.  TODO this could be implimented better.
-    function ChooseQuestionTypePanel() {
+    function InvalidLoginPanel() {
         return (
-            <section style={styles.menuPanel} className="Choose-Question-type-panel">
-                
-                <h2> Choose Mode: </h2>
-                
-                <section style={ {display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'flex-start'}}>
-                    
-                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("1=1"); setActiveIndex(State.question)}}>All Words</button>
-                    
-                    <div style = {{width: '10px'}}></div>
+            <section style={styles.menuPanel} className="InvalidLogin-panel">
 
-                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'a.'"); setActiveIndex(State.question)}}>Adjectives Only</button>
-                    
-                    <div style = {{width: '10px'}}></div>
+                <h2 style={styles.title}>Temp incorrect login Page</h2>
 
-                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'adv.'"); setActiveIndex(State.question)}}>Adverbs Only</button>
-                    
-                    <div style = {{width: '10px'}}></div>
-
-                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'n.'"); setActiveIndex(State.question)}}>Nouns Only</button>
-                   
-                    <div style = {{width: '10px'}}></div>
-                    
-                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("POS = 'v.'"); setActiveIndex(State.question)}}>Verbs Only</button>
-                 
-                    <div style = {{width: '10px'}}></div>
-                    
-                    <button style={styles.questionTypeButton} onClick={() => {QnA.setSearchParam("(POS = 'v.' or POS = 'v. t.' or POS = 'v. i.' or POS = 'imp.')"); setActiveIndex(State.question)}}>All Verb Types</button>
-
-                </section>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}>login again</button>
 
             </section>
         );
     }
 
-    //QuestionPanel is the HTML for the QestionPanel state
-    function QuestionPanel() {
-        const [questionContainer, setQuestionContainer] = React.useState('');
-        const [buttonContainer, setButtonContainer] = React.useState({
-            answers: ['', '', '', ''],
-            onPressess: [() => {}, () => {}, () => {}, () => {}]
-        });
-        
-        React.useEffect(() => {
-            let mounted = true;
-
-            async function loadQuestion() {
-                if (currentGameMode === gameModes.daily) {
-                    if (!mounted || !dailyWords) return;
-                    QnA.setQuestion(dailyWords[DWOffset][0]);
-                    QnA.setAnswers([
-                        dailyWords[DWOffset][1],
-                        dailyWords[DWOffset + 1][1],
-                        dailyWords[DWOffset + 2][1],
-                        dailyWords[DWOffset + 3][1]
-                    ]);
-                    QnA.setRows([
-                        [dailyWords[DWOffset][0], "X", "X", dailyWords[DWOffset][1]],
-                        [dailyWords[DWOffset + 1][0], "X", "X", dailyWords[DWOffset + 1][1]],
-                        [dailyWords[DWOffset + 2][0], "X", "X", dailyWords[DWOffset + 2][1]],
-                        [dailyWords[DWOffset + 3][0], "X", "X", dailyWords[DWOffset + 3][1]]
-                    ]);
-                    setQuestionContainer(QnA.getQuestion());
-                    setButtonContainer(giveQuestionValues());
-                    return;
-                }
-
-                await QnA.generateQuestion();
-                if (!mounted) return;
-                setQuestionContainer(QnA.getQuestion());
-                setButtonContainer(giveQuestionValues());
-            }
-
-            loadQuestion();
-            return () => { mounted = false; };
-        }, []);
+    function CreateAccountPanel() {
         return (
-            <section style={styles.menuPanel} className="question-panel">
+            <section style={styles.menuPanel} className="CreateAccount-panel">
 
-                <h2 style={styles.title}>{questionContainer}</h2>
+                <h2 style={styles.title}>Temp create account Page</h2>
 
-                {/* first row of buttons */}
-                <section style={{ display: 'flex', alignItems: 'center' }}>
+                <button style={styles.playButton} onClick={() => {}}>create account</button>
 
-                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[0]}>{buttonContainer.answers[0]}</button>
-                    
-                    <div style = {{width: '10px'}}></div>
-                    
-                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[1]}>{buttonContainer.answers[1]}</button>
-                
-                </section>
-
-                {/* second row of buttons */}
-                <section style={{ display: 'flex', alignItems: 'center' }}>
-
-                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[2]}>{buttonContainer.answers[2]}</button>
-                
-                    <div style = {{width: '10px'}}></div>
-                
-                    <button style={styles.gridButton} onClick={buttonContainer.onPressess[3]}>{buttonContainer.answers[3]}</button>
-
-                    
-            
-                </section>
-        
             </section>
         );
     }
-
-    //CorrectAnswerPanel is the html for the correct answer state
-    function CorrectAnswerPanel() {
-        let tempButtonText = "Next Word?";
-        let tempOnClick = () => {setActiveIndex(State.question)};
-
-        if(currentGameMode === gameModes.myWords){
-            localDB.UpdateLineCorrect(QnA.getLine(0), QnA.getAnswers()[0]);
-            if(localDB.IsMyWordsEmpty(window.db2)){
-                tempButtonText = "Return to Menu";
-                tempOnClick = () => {currentGameMode = gameModes.classic; setActiveIndex(State.menu)};
-            }
-        }
-        return (
-            <section className="correct-answer-panel" style={styles.menuPanel}>
-
-                <h1 style = {styles.title}>Correct!</h1>
-
-                <section style={styles.menuPanel}>       
-
-                    <h1> {QnA.getCorrectResponse() +":"} </h1>
-
-                    <h1>{QnA.getAnswers()[0]}</h1>
-
-                </section>
-
-                <section style={styles.menuPanel}>
-
-                    <button style = {styles.playButton} onClick={() => {tempOnClick(); if(currentGameMode === gameModes.daily){DWOffset += 4}}}>{tempButtonText}</button>
-                
-                </section>
-            
-            </section>
-        );
-    }
-
-    //WrongAnswerPanel is the html for the wrong answer state
-    function WrongAnswerPanel() {
-        localDB.UpdateLineIncorrect(QnA.getLine(0), QnA.getAnswers()[0]);
-        localDB.UpdateLineIncorrect(QnA.getLine(selectedIndex), QnA.getAnswers()[selectedIndex]);
-        
-        return (
-            <section className="wrong-answer-panel" style={styles.menuPanel}>
-                            
-                <h1 style = {styles.title}>Incorrect!</h1>
-        
-                <section style={styles.menuPanel}>   
-
-                    <h1> {"You chose: " + QnA.getAnswers()[selectedIndex].slice(0, -1) + ", which is associated with the word: " +  QnA.getWords()[selectedIndex] } </h1>
-
-                    <h1> {"The correct answer for " + QnA.getWords()[0]+" is: " + QnA.getAnswers()[0]} </h1>
-        
-                </section>
-        
-                <section style={{ display: 'flex', alignItems: 'center' }}>
-        
-                    <button style = {styles.playButton} onClick={() => {setActiveIndex(State.question); if(currentGameMode === gameModes.daily){DWOffset += 4}}}>Next Word?</button>  
-        
-                </section>
-            
-            </section>
-        );
-    }
-
-    //myWordsPanel is a screen that shows you the words you got incorrect
-    function MyWordsPanel() {
-        const textStr = localDB.stringOfIncorrectWords(window.db2);
-
-        if(textStr === "No incorrect words"){
-            return(
-                <section className="wrong-words-panel" style={styles.menuPanel}>
-                    <p1>This is where I'd keep my incorrect words.{"\n"}IF I HAD ANY!</p1>
-                </section>
-                );
-        }
-        //TODO change the <pre></pre>
-        else{
-            return (
-                <section className="wrong-words-panel" style={styles.menuPanel}>
-
-                {/* TODO change this formatting to match the rest of the code in the grapics update*/}              
-                <pre style={{ whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', maxWidth: '99%' }}>
-                    {textStr}
-                </pre>
-            
-                    <section style={{ display: 'flex', alignItems: 'center' }}>
-            
-                        <button style = {styles.playButton} onClick={() => setActiveIndex(State.question)}>Test Your Words?</button>  
-            
-                    </section>
-                
-                </section>
-            );
-        }
-    }
-
-    //DailyEndPanel is the html for the state shown when you finish the daily challenge
-    function DailyEndPanel() {
-        return (
-            <section className="daily-end-panel" style={styles.menuPanel}>
-
-                <h1 style = {styles.title}>Daily Challenge Complete!</h1>
-
-                <section style={styles.menuPanel}>       
-
-                    <h1> You scored: {dailyScore}/10 </h1>
-
-                </section>
-
-                <section style={styles.menuPanel}>
-
-                    <button style = {styles.playButton} onClick={() => {setActiveIndex(State.menu); DWOffset = 0; dailyScore = 0;}}>Return to Menu</button>
-                
-                </section>
-            
-            </section>
-        );
-    }
-
-    //this funtion makes an object that holds 2 arrays of 4, the answers and their associated buttions, where answers[0] is associated with onPresses[0]
-    function giveQuestionValues(){
-        const container = {answers: [], onPressess: []};
-
-        const localAnswers = QnA.getAnswers();
-
-        let randomNum = Math.floor(Math.random()*4);
-
-        for(let i = 0; i < 4; i++){
-            container.answers[((i + randomNum) % 4)] = localAnswers[i];
-            if(i === 0){
-                container.onPressess[((i + randomNum) % 4)] = (() => {  if(currentGameMode === gameModes.daily && DWOffset > 35/*10 * 9 - 1 */){setActiveIndex(State.dailyEnd);}
-                                                                              else setActiveIndex(State.correctAnswer); 
-                                                                              selectedIndex = i; 
-                                                                              Streak.IncrementStreak();
-                                                                              dailyScore++;
-                                                                            }
-                                                                    );
-            }
-
-            else{
-                container.onPressess[((i + randomNum) % 4)] = (() => {  setActiveIndex(State.wrongAnswer); 
-                                                                              selectedIndex = i; 
-                                                                              Streak.ZeroStreak();
-                                                                            }
-                                                                    );
-            }
-        }
-        
-        return container;
-    }
-    //#endregion
 }
