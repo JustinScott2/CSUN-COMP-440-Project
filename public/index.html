@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.8">
-        <title>Bibloguesser - 0.9</title>
+        <title>Comp 440 Project - Phase 1</title>
         <link rel="stylesheet" href="styles.css">
     </head>
 
@@ -19,24 +19,23 @@
             window.dbPromise = initSqlJs({
                 locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
             })
-            .then(buf => {
+            .then(SQL => {
                 window.SQL = SQL;
                 window.db = new SQL.Database();
                 window.db.run(`
-                    CREATE TABLE IF NOT EXISTS myWords (
-                        Word TEXT,
-                        Count INTEGER,
-                        POS TEXT,
-                        Definition TEXT,
-                        NumWrong INTEGER,
-                        NumRight INTEGER,
-                        PRIMARY KEY (Word, Count, POS, Definition)
+                    CREATE TABLE IF NOT EXISTS users (
+                        username TEXT PRIMARY KEY,
+                        password TEXT UNIQUE,
+                        firstName TEXT,
+                        lastName TEXT,
+                        email TEXT,
+                        phone TEXT
                     );
                 `);
                 return window.db;
             })
             .catch(err => {
-                console.error('Failed to load dictionary.db', err);
+                console.error('Failed to load sql.js', err);
                 throw err;
             });
         </script>

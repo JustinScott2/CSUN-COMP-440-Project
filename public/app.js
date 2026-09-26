@@ -1,6 +1,17 @@
 //errorText holds a string that diplayed when a failed screen transition happens 
 let errorText = "Error: no matching state";
 
+//userInput is an object that holds the user input for later use
+let userInput = {
+    username: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+};
+
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
 function pxStringHandler(pxVal, operation) {
@@ -194,11 +205,35 @@ function Form() {
 
     //creates the activeindex variable for controlling the states for the single page
     const [activeIndex, setActiveIndex] = React.useState(State.menu);
+    const [loginForm, setLoginForm] = React.useState({
+        usernameInput: '',
+        passwordInput: '',
+        confirmPasswordInput: '',
+        firstNameInput: '',
+        lastNameInput: '',
+        emailInput: '',
+        phoneInput: ''
+    });
 
     //#region dropdown menu functions
     const [isOpen, setIsOpen] = React.useState(false);
 
     const toggleDropdown = () => setIsOpen(!isOpen);
+
+    const updateLoginForm = (event) => {
+        const { name, value } = event.target;
+
+        setLoginForm((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+
+        if (name === 'usernameInput') {
+            userInput.username = value;
+        } else if (name === 'passwordInput') {
+            userInput.password = value;
+        }
+    };
     //#endregion
 
     //content is a variable that holds the content to be returned so it can be passed into appshell once
@@ -301,14 +336,32 @@ function Form() {
 
     function LoginPanel() {
         return (
-            <section style={styles.menuPanel} className="login-panel">
+            <form method="post" onSubmit={handleSubmitLogin}>
+                <section style={styles.menuPanel} className="login-panel">
 
-                <h2 style={styles.title}>Temp Login Page</h2>
+                    <h2 style={styles.title}>Temp Login Page</h2>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}>correct login</button>
+                    <label>
+                        Username: <input
+                            name="usernameInput"
+                            value={loginForm.usernameInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.invalidLogin)}}>incorrect login</button>
-            </section>
+                    <label>
+                        Password: <input
+                            name="passwordInput"
+                            type="password"
+                            value={loginForm.passwordInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
+
+                    <button type="submit" style={styles.playButton}onClick={() => {
+                    }}>Login</button>
+                </section>
+            </form>
         );
     }
 
@@ -339,12 +392,146 @@ function Form() {
     function CreateAccountPanel() {
         return (
             <section style={styles.menuPanel} className="CreateAccount-panel">
+                <form method="post" onSubmit={handleSubmitCreateAccount}>
+                    <h2 style={styles.title}>Temp Create Account Page</h2>
 
-                <h2 style={styles.title}>Temp create account Page</h2>
+                    <label>
+                        Username: <input
+                            name="usernameInput"
+                            value={loginForm.usernameInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
 
-                <button style={styles.playButton} onClick={() => {}}>create account</button>
+                    <section> </section>
 
+                    <label>
+                        Password: <input
+                            name="passwordInput"
+                            type="password"
+                            value={loginForm.passwordInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
+
+                    <section> </section>
+
+                    <label>
+                        Confirm Password: <input
+                            name="confirmPasswordInput"
+                            type="password"
+                            value={loginForm.confirmPasswordInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
+
+                    <section> </section>
+
+                    <label>
+                        First Name: <input
+                            name="firstNameInput"
+                            value={loginForm.firstNameInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
+
+                    <section> </section>
+
+                    <label>
+                        Last Name: <input
+                            name="lastNameInput"
+                            value={loginForm.lastNameInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
+
+                    <section> </section>
+
+                    <label>
+                        Email: <input
+                            name="emailInput"
+                            type="email"
+                            value={loginForm.emailInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
+
+                    <section> </section>
+
+                    <label>
+                        Phone Number: <input
+                            name="phoneInput"
+                            type="tel"
+                            value={loginForm.phoneInput}
+                            onChange={updateLoginForm}
+                        />
+                    </label>
+
+                    <section> </section>
+
+                    <button type="submit" style={styles.playButton}onClick={() => {
+                    }}>Create Account</button>
+                </form> 
             </section>
         );
+    }
+
+    function sanitizeInput(input) {
+        //TODO implement input sanitization logic here
+        return input;
+    }
+
+    function ClearForm() {
+        setLoginForm({
+            usernameInput: '',
+            passwordInput: '',
+            confirmPasswordInput: '',
+            firstNameInput: '',
+            lastNameInput: '',
+            emailInput: '',
+            phoneInput: ''
+        });
+    }
+
+    function handleSubmitLogin(e) {
+        e.preventDefault();
+
+        userInput.username = sanitizeInput(loginForm.usernameInput);
+        userInput.password = sanitizeInput(loginForm.passwordInput);
+
+        console.log('Submitted login values:', userInput);
+        handleLogin();
+        ClearForm();
+    }
+
+    function handleSubmitCreateAccount(e) {
+        e.preventDefault();
+
+        userInput.username = sanitizeInput(loginForm.usernameInput);
+        userInput.password = sanitizeInput(loginForm.passwordInput);
+        userInput.confirmPassword = sanitizeInput(loginForm.confirmPasswordInput);
+        userInput.firstName = sanitizeInput(loginForm.firstNameInput);
+        userInput.lastName = sanitizeInput(loginForm.lastNameInput);
+        userInput.email = sanitizeInput(loginForm.emailInput);
+        userInput.phone = sanitizeInput(loginForm.phoneInput);
+
+        console.log('Submitted create account values:', userInput);
+        handleCreateAccount();
+        ClearForm();
+    }
+
+    function handleLogin(){
+        //TODO check DB here
+        let loginSuccess = true; // Replace with actual login logic
+        if(loginSuccess){
+            setActiveIndex(State.validLogin);
+        } else {
+            setActiveIndex(State.invalidLogin);
+        }
+    }
+
+    function handleCreateAccount(e) {
+        //TODO implement create account logic here
+        let createAccountSuccess = true;
     }
 }
