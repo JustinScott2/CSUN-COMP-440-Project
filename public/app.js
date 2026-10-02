@@ -227,12 +227,6 @@ function Form() {
             ...prev,
             [name]: value
         }));
-
-        if (name === 'usernameInput') {
-            userInput.username = value;
-        } else if (name === 'passwordInput') {
-            userInput.password = value;
-        }
     };
     //#endregion
 
@@ -253,7 +247,7 @@ function Form() {
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <LoginPanel></LoginPanel>
+                {LoginPanel()}
                 </React.Fragment>
             );
         break;
@@ -277,7 +271,7 @@ function Form() {
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <CreateAccountPanel></CreateAccountPanel>
+                {CreateAccountPanel()}
                 </React.Fragment>
             );
         break;
@@ -296,36 +290,36 @@ function Form() {
     //#region functions for the different states.
 
     //ControlPanel is the HTML for the control panel state, ie the options bar at the top.
-        function ControlPanel() {
-            return (
-                <section style={styles.optionsPanel} className="control-panel">
-                    
-                    {activeIndex !== State.menu && (
-                        <button style={styles.backButton} onClick={() => {setActiveIndex(State.menu)}}>Return</button>
+    function ControlPanel() {
+        return (
+            <section style={styles.optionsPanel} className="control-panel">
+                
+                {activeIndex !== State.menu && (
+                    <button style={styles.backButton} onClick={() => {setActiveIndex(State.menu)}}>Return</button>
+                )}
+
+                <div style={styles.settingsWrapper}>
+                    <button style={styles.settingsButton} onClick={toggleDropdown}>Settings</button>
+
+                    {/* TODO make this do the things when visual update is started*/}
+                    {isOpen && (
+                        <ul style={styles.menuStyle}>
+                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 1</li>
+                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 2</li>
+                            <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 3</li>
+                        </ul>
                     )}
-
-                    <div style={styles.settingsWrapper}>
-                        <button style={styles.settingsButton} onClick={toggleDropdown}>Settings</button>
-
-                        {/* TODO make this do the things when visual update is started*/}
-                        {isOpen && (
-                            <ul style={styles.menuStyle}>
-                                <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 1</li>
-                                <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 2</li>
-                                <li style={styles.itemStyle} onClick={() => setIsOpen(false)}>Action 3</li>
-                            </ul>
-                        )}
-                    </div>
-                </section>
-            );
-        }
+                </div>
+            </section>
+        );
+    }
 
     //MenuPanel is the HTML for the menu state
     function MenuPanel() {
         return (
             <section style={styles.menuPanel} className="menu-panel">
 
-                <h2 style={styles.title}>Temp Menu Text</h2>
+                <h2 style={styles.title}>Menu</h2>
 
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}>Login</button>
 
@@ -336,7 +330,7 @@ function Form() {
 
     function LoginPanel() {
         return (
-            <form method="post" onSubmit={handleSubmitLogin}>
+            <form onSubmit={handleSubmitLogin}>
                 <section style={styles.menuPanel} className="login-panel">
 
                     <h2 style={styles.title}>Temp Login Page</h2>
@@ -367,11 +361,12 @@ function Form() {
 
     function ValidLoginPanel() {
         return (
+            //TODO make a better way of remembering the current user than using userinput.username, which is cleared on every form submission.
             <section style={styles.menuPanel} className="ValidLogin-panel">
 
-                <h2 style={styles.title}>Temp correct login Page</h2>
+                <h2 style={styles.title}>Logged in as {userInput.username}</h2>
 
-                <button style={styles.playButton} onClick={() => {}}>temp button</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Return to Menu</button>
 
             </section>
         );
@@ -390,89 +385,92 @@ function Form() {
     }
 
     function CreateAccountPanel() {
-        return (
-            <section style={styles.menuPanel} className="CreateAccount-panel">
-                <form method="post" onSubmit={handleSubmitCreateAccount}>
-                    <h2 style={styles.title}>Temp Create Account Page</h2>
+        return (                
+            <form onSubmit={handleSubmitCreateAccount}>
+                <section style={styles.menuPanel} className="CreateAccount-panel">
+                    <h2 style={styles.title}>Create Account</h2>
+                        <section style={{alignItems: 'flex-end', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            <label>
+                                Username: <input
+                                    name="usernameInput"
+                                    value={loginForm.usernameInput}
+                                    onChange={updateLoginForm}
+                                />
+                            </label>
+                                <section>   </section>
+                            <label>
+                                Password: <input
+                                    name="passwordInput"
+                                    type="password"
+                                    value={loginForm.passwordInput}
+                                    onChange={updateLoginForm}
+                                />
+                            </label>
 
-                    <label>
-                        Username: <input
-                            name="usernameInput"
-                            value={loginForm.usernameInput}
-                            onChange={updateLoginForm}
-                        />
-                    </label>
+                                <section>   </section>
 
-                    <section> </section>
+                            <label>
+                                Confirm Password: <input
+                                    name="confirmPasswordInput"
+                                    type="password"
+                                    value={loginForm.confirmPasswordInput}
+                                    onChange={updateLoginForm}
+                                />
+                            </label>
 
-                    <label>
-                        Password: <input
-                            name="passwordInput"
-                            type="password"
-                            value={loginForm.passwordInput}
-                            onChange={updateLoginForm}
-                        />
-                    </label>
+                                <section>   </section>
+                                
 
-                    <section> </section>
+                            <label>
+                                First Name: <input
+                                    name="firstNameInput"
+                                    value={loginForm.firstNameInput}
+                                    onChange={updateLoginForm}
+                                />
+                            </label>
 
-                    <label>
-                        Confirm Password: <input
-                            name="confirmPasswordInput"
-                            type="password"
-                            value={loginForm.confirmPasswordInput}
-                            onChange={updateLoginForm}
-                        />
-                    </label>
+                                <section>   </section>
+                                
 
-                    <section> </section>
+                            <label>
+                                Last Name: <input
+                                    name="lastNameInput"
+                                    value={loginForm.lastNameInput}
+                                    onChange={updateLoginForm}
+                                />
+                            </label>
 
-                    <label>
-                        First Name: <input
-                            name="firstNameInput"
-                            value={loginForm.firstNameInput}
-                            onChange={updateLoginForm}
-                        />
-                    </label>
+                                <section>   </section>
+                                
 
-                    <section> </section>
+                            <label>
+                                Email: <input
+                                    name="emailInput"
+                                    type="email"
+                                    value={loginForm.emailInput}
+                                    onChange={updateLoginForm}
+                                />
+                            </label>
 
-                    <label>
-                        Last Name: <input
-                            name="lastNameInput"
-                            value={loginForm.lastNameInput}
-                            onChange={updateLoginForm}
-                        />
-                    </label>
+                                <section>   </section>
+                                
 
-                    <section> </section>
+                            <label>
+                                Phone Number: <input
+                                    name="phoneInput"
+                                    type="tel"
+                                    value={loginForm.phoneInput}
+                                    onChange={updateLoginForm}
+                                />
+                            </label>
 
-                    <label>
-                        Email: <input
-                            name="emailInput"
-                            type="email"
-                            value={loginForm.emailInput}
-                            onChange={updateLoginForm}
-                        />
-                    </label>
+                                <section>   </section>
+                                
+                        </section>
+                    <button type="submit" style={styles.playButton}>Create Account</button>
+                </section>
+            </form> 
 
-                    <section> </section>
-
-                    <label>
-                        Phone Number: <input
-                            name="phoneInput"
-                            type="tel"
-                            value={loginForm.phoneInput}
-                            onChange={updateLoginForm}
-                        />
-                    </label>
-
-                    <section> </section>
-
-                    <button type="submit" style={styles.playButton}onClick={() => {
-                    }}>Create Account</button>
-                </form> 
-            </section>
         );
     }
 
@@ -516,13 +514,17 @@ function Form() {
         userInput.phone = sanitizeInput(loginForm.phoneInput);
 
         console.log('Submitted create account values:', userInput);
-        handleCreateAccount();
+        let result = handleCreateAccount();
         ClearForm();
+        if (result === "Account created successfully") {
+            setActiveIndex(State.validLogin);
+        } else {
+            setActiveIndex(State.createAccount);
+        }
     }
 
     function handleLogin(){
-        //TODO check DB here
-        let loginSuccess = true; // Replace with actual login logic
+        let loginSuccess = account.CheckLogin(userInput.username, userInput.password);
         if(loginSuccess){
             setActiveIndex(State.validLogin);
         } else {
@@ -531,7 +533,16 @@ function Form() {
     }
 
     function handleCreateAccount(e) {
-        //TODO implement create account logic here
-        let createAccountSuccess = true;
+        let createAccountSuccess = account.CreateAccount(
+            userInput.username,
+            userInput.password,
+            userInput.confirmPassword,
+            userInput.firstName,
+            userInput.lastName,
+            userInput.email,
+            userInput.phone
+        );
+        console.log('Create account result:', createAccountSuccess);
+        return createAccountSuccess;
     }
 }
