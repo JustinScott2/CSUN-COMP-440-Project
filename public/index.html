@@ -25,13 +25,16 @@
                 window.db.run(`
                     CREATE TABLE IF NOT EXISTS users (
                         username TEXT PRIMARY KEY,
-                        password TEXT UNIQUE,
+                        password TEXT,
                         firstName TEXT,
                         lastName TEXT,
                         email TEXT,
                         phone TEXT
                     );
                 `);
+
+                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("RRanom", "Pass", "Justin", "Scott", "Justin.Scott.216@my.cusn.edu", "111-111-1111")');
+                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("Reddd", "Pass", "Riley", "White", "riley.white.387@my.csun.edu", "111-111-1111")');
                 return window.db;
             })
             .catch(err => {
@@ -40,8 +43,7 @@
             });
         </script>
 
-        <script src="QnA.js"></script>
-        <script src="localDB.js"></script>
+        <script src="account.js"></script>
         <script type="text/babel" src="app.js"></script>
         <script type="text/babel">
             window.dbPromise
