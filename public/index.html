@@ -13,14 +13,14 @@
         <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
         <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
         <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
-        <script src="https://unpkg.com/bcryptjs@3.0.3/index.js"></script>
+        <script src="https://unpkg.com/bcryptjs@3.0.3/umd/index.js"></script>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
         <script>
             window.dbPromise = initSqlJs({
                 locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
             })
-            .then(SQL => {
+            .then(async SQL => {
                 window.SQL = SQL;
                 window.db = new SQL.Database();
                 window.db.run(`
@@ -34,8 +34,18 @@
                     );
                 `);
 
-                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("RRanom", "Pass", "Justin", "Scott", "Justin.Scott.216@my.cusn.edu", "111-111-1111")');
-                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("Reddd", "Pass", "Riley", "White", "riley.white.387@my.csun.edu", "111-111-1111")');
+                const [justinPasswordHash, rileyPasswordHash] = await Promise.all([
+                    bcrypt.hash('Pass', 10),
+                    bcrypt.hash('Pass', 10)
+                ]);
+                window.db.run(
+                    'INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES (?, ?, ?, ?, ?, ?)',
+                    ['RRanom', justinPasswordHash, 'Justin', 'Scott', 'Justin.Scott.216@my.cusn.edu', '111-111-1111']
+                );
+                window.db.run(
+                    'INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES (?, ?, ?, ?, ?, ?)',
+                    ['Reddd', rileyPasswordHash, 'Riley', 'White', 'riley.white.387@my.csun.edu', '111-111-1111']
+                );
                 return window.db;
             })
             .catch(err => {

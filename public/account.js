@@ -1,31 +1,36 @@
 class account {
-    static AddLine(Username, Password, FirstName, LastName, Email, Phone) {
-        const salt = await bcrypt.genSalt(5);
-        const secPass = bcrypt.hash(Password, salt);
+    static async AddLine(Username, Password, FirstName, LastName, Email, Phone) {
+        const passwordHash = await bcrypt.hash(Password, 10);
         const insertStmt = window.db.prepare(
             `INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES (?, ?, ?, ?, ?, ?)`
         );
-        insertStmt.run([Username, secPass, FirstName, LastName, Email, Phone]);
-        insertStmt.free();
+        try {
+            insertStmt.run([Username, passwordHash, FirstName, LastName, Email, Phone]);
+        } finally {
+            insertStmt.free();
+        }
     }
 
-    //queries database for hashed password related to username
-    static getPasswordHash(Username) {
+    static getPasswordHash(username) {
         const selectStmt = window.db.prepare(
-            'SELECT 1 FROM users WHERE username = ?'
+            'SELECT password FROM users WHERE username = ? LIMIT 1'
         );
-        return selectStmt.run([Username]);
+        try {
+            if (!selectStmt.step()) {
+                return null;
+            }
+            return selectStmt.getAsObject().password;
+        } finally {
+            selectStmt.free();
+        }
     }
 
-    // if userInput.password hashes to the same stored password as the username,
-    // then it must be a valid login.
-    static CheckLogin(Username, Password) {
-        const secPass = account.getPasswordHash(username);
-        if(bcrypt.compare(Password,secPass){
-            return true;
-        } else {
+    static async CheckLogin(Username, Password) {
+        const passwordHash = account.getPasswordHash(Username);
+        if (passwordHash === null) {
             return false;
         }
+        return await bcrypt.compare(Password, passwordHash);
     }
 
     static CheckUniqueKey(Key, Value) { 
@@ -44,7 +49,7 @@ class account {
         }
     }
 
-    static CreateAccount(Username, Password, Password2, FirstName, LastName, Email, Phone) {
+    static async CreateAccount(Username, Password, Password2, FirstName, LastName, Email, Phone) {
         if (Password !== Password2) {
             return "Passwords do not match";
         }
@@ -59,7 +64,7 @@ class account {
             return "Phone number already exists";
         }
         else{
-            this.AddLine(Username, Password, FirstName, LastName, Email, Phone);
+            await this.AddLine(Username, Password, FirstName, LastName, Email, Phone);
             return "Account created successfully";
         }
     }

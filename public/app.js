@@ -12,7 +12,6 @@ let userInput = {
     phone: ''
 };
 
-const bcrypt = require('bcrypt');
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
 function pxStringHandler(pxVal, operation) {
@@ -476,7 +475,7 @@ function Form() {
     }
 
     function sanitizeInput(input) {
-        const format = /[!@#$%^&*()_+-=[]{};':"\|,.<>/?]+/;
+        const format = /[!@#$%^&*()_+-=[]{};':"\|,.<>\/?]+/;
         return input.replace(format, '');
     }
 
@@ -492,40 +491,50 @@ function Form() {
         });
     }
 
-    function handleSubmitLogin(e) {
+    async function handleSubmitLogin(e) {
         e.preventDefault();
 
         userInput.username = sanitizeInput(loginForm.usernameInput);
-        userInput.password = sanitizeInput(loginForm.passwordInput);
+        userInput.password = loginForm.passwordInput;
 
-        console.log('Submitted login values:', userInput);
-        handleLogin();
-        ClearForm();
+        try {
+            await handleLogin();
+        } catch (error) {
+            console.error('Login failed:', error);
+            setActiveIndex(State.invalidLogin);
+        } finally {
+            ClearForm();
+        }
     }
 
-    function handleSubmitCreateAccount(e) {
+    async function handleSubmitCreateAccount(e) {
         e.preventDefault();
 
         userInput.username = sanitizeInput(loginForm.usernameInput);
-        userInput.password = sanitizeInput(loginForm.passwordInput);
-        userInput.confirmPassword = sanitizeInput(loginForm.confirmPasswordInput);
+        userInput.password = loginForm.passwordInput;
+        userInput.confirmPassword = loginForm.confirmPasswordInput;
         userInput.firstName = sanitizeInput(loginForm.firstNameInput);
         userInput.lastName = sanitizeInput(loginForm.lastNameInput);
         userInput.email = sanitizeInput(loginForm.emailInput);
         userInput.phone = sanitizeInput(loginForm.phoneInput);
 
-        console.log('Submitted create account values:', userInput);
-        let result = handleCreateAccount();
-        ClearForm();
-        if (result === "Account created successfully") {
-            setActiveIndex(State.validLogin);
-        } else {
+        try {
+            const result = await handleCreateAccount();
+            if (result === "Account created successfully") {
+                setActiveIndex(State.validLogin);
+            } else {
+                setActiveIndex(State.createAccount);
+            }
+        } catch (error) {
+            console.error('Account creation failed:', error);
             setActiveIndex(State.createAccount);
+        } finally {
+            ClearForm();
         }
     }
 
-    function handleLogin(){
-        let loginSuccess = account.CheckLogin(userInput.username, userInput.password);
+    async function handleLogin(){
+        const loginSuccess = await account.CheckLogin(userInput.username, userInput.password);
         if(loginSuccess){
             setActiveIndex(State.validLogin);
         } else {
@@ -533,8 +542,8 @@ function Form() {
         }
     }
 
-    function handleCreateAccount(e) {
-        let createAccountSuccess = account.CreateAccount(
+    async function handleCreateAccount() {
+        const createAccountSuccess = await account.CreateAccount(
             userInput.username,
             userInput.password,
             userInput.confirmPassword,
