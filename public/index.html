@@ -33,9 +33,10 @@
                         phone TEXT
                     );
                 `);
-
-                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("RRanom", "Pass", "Justin", "Scott", "Justin.Scott.216@my.cusn.edu", "111-111-1111")');
-                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("Reddd", "Pass", "Riley", "White", "riley.white.387@my.csun.edu", "111-111-1111")');
+                const salt = bcrypt.genSaltSync(5);
+                const secPass = bcrypt.hashSync("Pass", salt);
+                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("RRanom", \'' + secPass + '\', "Justin", "Scott", "Justin.Scott.216@my.cusn.edu", "111-111-1111")');
+                window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("Reddd", \'' + secPass + '\', "Riley", "White", "riley.white.387@my.csun.edu", "111-111-1111")');
                 return window.db;
             })
             .catch(err => {

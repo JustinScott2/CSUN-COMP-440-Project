@@ -523,9 +523,10 @@ function Form() {
         }
     }
 
-    function handleLogin(){
-        let loginSuccess = account.CheckLogin(userInput.username, userInput.password);
-        if(loginSuccess){
+    async function  handleLogin(){
+        let loginSuccess = await account.CheckLogin(userInput.username, userInput.password);
+        console.log('Login success: ', loginSuccess);
+        if(loginSuccess == true){
             setActiveIndex(State.validLogin);
         } else {
             setActiveIndex(State.invalidLogin);
