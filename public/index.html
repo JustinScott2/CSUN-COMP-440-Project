@@ -22,6 +22,8 @@
             .then(SQL => {
                 window.SQL = SQL;
                 window.db = new SQL.Database();
+                 //tables res ipsa loquitur
+                //TODO delete the table users and use Users2, but rename it to Users, and update references accordingly
                 window.db.run(`
                     CREATE TABLE IF NOT EXISTS users (
                         username TEXT PRIMARY KEY,
@@ -31,6 +33,55 @@
                         email TEXT,
                         phone TEXT
                     );
+                    
+                    CREATE TABLE IF NOT EXISTS Users2(
+                        username TEXT PRIMARY KEY,
+                        password TEXT, --remember, this should be hashed,
+                        firstName TEXT,
+                        lastName TEXT,
+                        email TEXT,
+                        phoneNum TEXT
+                    );  
+                    
+                    CREATE TABLE IF NOT EXISTS Admins(
+                        username TEXT PRIMARY KEY,
+                        password TEXT, --remember, this IS hashed,
+                        FOREIGN KEY (username) REFERENCES Users2(username),
+                        FOREIGN KEY (password) REFERENCES Users2(password)
+                    );  
+                    
+                    CREATE TABLE IF NOT EXISTS Products(
+                        itemID INT PRIMARY KEY,
+                        title TEXT,
+                        description TEXT,
+                        seller TEXT,
+                        datePosted DATE,
+                        price INT, --last two values are cents, ie $2.50 is 250
+                        FOREIGN KEY (seller) REFERENCES Users2(username)
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Reviews(
+                        itemID INT PRIMARY KEY,
+                        poster TEXT,
+                        revTitle TEXT,
+                        revText TEXT,
+                        rating INT,
+                        datePosted DATE,
+                        FOREIGN KEY (itemID) REFERENCES Products(itemID),
+                        FOREIGN KEY (poster) REFERENCES Users2(username)
+                    );
+
+                    CREATE TABLE IF NOT EXISTS CategoryList(
+                        categoryName TEXT PRIMARY KEY
+                    );
+                    
+                    CREATE TABLE IF NOT EXISTS CategoryRelations(
+                        itemID INT,
+                        categoryName TEXT,
+                        PRIMARY KEY (itemID, categoryName),
+                        FOREIGN KEY (itemID) REFERENCES Products(itemID),
+                        FOREIGN KEY (categoryName) REFERENCES CategoryList(categoryName)
+                    );  
                 `);
 
                 window.db.run('INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES ("RRanom", "Pass", "Justin", "Scott", "Justin.Scott.216@my.cusn.edu", "111-111-1111")');
