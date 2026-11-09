@@ -1,7 +1,7 @@
 class account {
     static AddLine(Username, Password, FirstName, LastName, Email, Phone) {
         const insertStmt = window.db.prepare(
-            `INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES (?, ?, ?, ?, ?, ?)`
+            `INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES (?, ?, ?, ?, ?, ?)`
         );
         insertStmt.run([Username, Password, FirstName, LastName, Email, Phone]);
         insertStmt.free();
@@ -9,7 +9,7 @@ class account {
 
     static CheckLogin(Username, Password) { 
         const selectStmt = window.db.prepare(
-            `SELECT 1 FROM users WHERE username = ? AND password = ?`
+            `SELECT 1 FROM Users WHERE username = ? AND password = ?`
         );
         selectStmt.bind([Username, Password]);
         const exists = selectStmt.step();
@@ -25,7 +25,7 @@ class account {
 
     static CheckUniqueKey(Key, Value) { 
         const selectStmt = window.db.prepare(
-            `SELECT 1 FROM users WHERE ${Key} = ?`
+            `SELECT 1 FROM Users WHERE ${Key} = ?`
         );
         selectStmt.bind([Value]);
         const exists = selectStmt.step();
@@ -50,7 +50,7 @@ class account {
         else if(this.CheckUniqueKey("email", Email)){
             return "Email already exists";
         }
-        else if(this.CheckUniqueKey("phone", Phone)){
+        else if(this.CheckUniqueKey("phoneNum", Phone)){
             return "Phone number already exists";
         }
         else{
