@@ -198,14 +198,30 @@ const State = {
     login: 1,
     validLogin: 2,
     invalidLogin: 3,
-    createAccount: 4
+    createAccount: 4,
+    buttonListTest: 5,
+    buttonTestPress: 6
 }
+
+
 
 //form is the funtion that index actually runs
 function Form() {
-
-    //creates the activeindex variable for controlling the states for the single page
     const [activeIndex, setActiveIndex] = React.useState(State.menu);
+    const [pressedButtonId, setPressedButtonId] = React.useState(null);
+
+    //move this part on actual integration
+    const changePressedButtonId = (newId) => {
+        setPressedButtonId(newId);
+        setActiveIndex(State.buttonTestPress);
+    };
+
+    const buttonList = [
+        { id: 1, label: 'Button 1', onClick: () => {changePressedButtonId(1);} },
+        { id: 2, label: 'Button 2', onClick: () => {changePressedButtonId(2);} },
+        { id: 3, label: 'Button 3', onClick: () => {changePressedButtonId(3);} },
+    ];
+    //creates the activeindex variable for controlling the states for the single page
     const [loginForm, setLoginForm] = React.useState({
         usernameInput: '',
         passwordInput: '',
@@ -276,6 +292,22 @@ function Form() {
                 </React.Fragment>
             );
         break;
+        case State.buttonListTest:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ButtonListTestPanel></ButtonListTestPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.buttonTestPress:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ButtonTestPressPanel></ButtonTestPressPanel>
+                </React.Fragment>
+            );
+        break;
         default:
             content = (
                 <React.Fragment>
@@ -325,8 +357,31 @@ function Form() {
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}>Login</button>
 
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>create account</button>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.buttonListTest)}}>Button list test</button>
             </section>
         );
+    }
+
+    function ButtonListTestPanel() {
+        return (
+            <section style={styles.menuPanel} className="button-list-test-panel">
+                {buttonList.map((button) => (
+                    <button key={button.id} style={styles.playButton} onClick={button.onClick}>
+                        {button.label}
+                    </button>
+                ))}
+            </section>
+        );
+    }
+    function ButtonTestPressPanel() {
+        return (
+            <section style={styles.menuPanel} className="button-test-press-panel">
+                <h2 style={styles.title}>Button {pressedButtonId} Pressed!</h2>               
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Return to Menu</button>
+            </section>
+        );           
     }
 
     function LoginPanel() {
