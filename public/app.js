@@ -12,7 +12,6 @@ let userInput = {
     phone: ''
 };
 
-const bcrypt = require('bcrypt');
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
 function pxStringHandler(pxVal, operation) {
@@ -199,29 +198,19 @@ const State = {
     validLogin: 2,
     invalidLogin: 3,
     createAccount: 4,
-    buttonListTest: 5,
-    buttonTestPress: 6
+    listItem: 5, //list new item
+    purchaseItem: 6,
+    reviewItem: 7,
+    viewItems: 8, //view all listed items
+    failurePage: 9 //page in event of any type of error when viewing other pages
+    //TODO: How do we want to view single items?
 }
-
-
 
 //form is the funtion that index actually runs
 function Form() {
-    const [activeIndex, setActiveIndex] = React.useState(State.menu);
-    const [pressedButtonId, setPressedButtonId] = React.useState(null);
 
-    //move this part on actual integration
-    const changePressedButtonId = (newId) => {
-        setPressedButtonId(newId);
-        setActiveIndex(State.buttonTestPress);
-    };
-
-    const buttonList = [
-        { id: 1, label: 'Button 1', onClick: () => {changePressedButtonId(1);} },
-        { id: 2, label: 'Button 2', onClick: () => {changePressedButtonId(2);} },
-        { id: 3, label: 'Button 3', onClick: () => {changePressedButtonId(3);} },
-    ];
     //creates the activeindex variable for controlling the states for the single page
+    const [activeIndex, setActiveIndex] = React.useState(State.menu);
     const [loginForm, setLoginForm] = React.useState({
         usernameInput: '',
         passwordInput: '',
@@ -292,19 +281,43 @@ function Form() {
                 </React.Fragment>
             );
         break;
-        case State.buttonListTest:
+        case State.listItem:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <ButtonListTestPanel></ButtonListTestPanel>
+                <ListItemPanel></ListItemPanel>
                 </React.Fragment>
             );
         break;
-        case State.buttonTestPress:
+        case State.purcahseItem:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <ButtonTestPressPanel></ButtonTestPressPanel>
+                <PurchaseItemPanel></PurchaseItemPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.reviewItem:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ReviewItemPanel></ReviewItemPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.viewItems:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ViewItemsPanel></ViewItemsPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.failurePage:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <FailurePanel></FailurePanel>
                 </React.Fragment>
             );
         break;
@@ -357,31 +370,8 @@ function Form() {
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}>Login</button>
 
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>create account</button>
-
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.buttonListTest)}}>Button list test</button>
             </section>
         );
-    }
-
-    function ButtonListTestPanel() {
-        return (
-            <section style={styles.menuPanel} className="button-list-test-panel">
-                {buttonList.map((button) => (
-                    <button key={button.id} style={styles.playButton} onClick={button.onClick}>
-                        {button.label}
-                    </button>
-                ))}
-            </section>
-        );
-    }
-    function ButtonTestPressPanel() {
-        return (
-            <section style={styles.menuPanel} className="button-test-press-panel">
-                <h2 style={styles.title}>Button {pressedButtonId} Pressed!</h2>               
-
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Return to Menu</button>
-            </section>
-        );           
     }
 
     function LoginPanel() {
@@ -418,11 +408,14 @@ function Form() {
     function ValidLoginPanel() {
         return (
             //TODO make a better way of remembering the current user than using userinput.username, which is cleared on every form submission.
+            // TODO ^ This would require cookies
             <section style={styles.menuPanel} className="ValidLogin-panel">
 
-                <h2 style={styles.title}>Logged in as {userInput.username}</h2>
+                <h2 style={styles.title}>This should be changed???Logged in as {userInput.username}</h2>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Return to Menu</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.listItem)}}>List New Item</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.reviewItem)}}>Review an Item</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.viewitems)}}>Browse Items</button>
 
             </section>
         );
@@ -530,9 +523,66 @@ function Form() {
         );
     }
 
+    function ListItemPanel() {
+        return (
+            //TODO: This needs to be a form
+            <section style={styles.menuPanel} className="ListItem-panel">
+
+                <h2 style={styles.title}>List an Item</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}> home </button>
+
+            </section>
+        );
+    }
+
+    //TODO: item purchase tied to each item page
+    function PurchaseItemPanel() {
+        return (
+            <section style={styles.menuPanel} className="PurchaseItem-panel">
+
+                <h2 style={styles.title}>Purchase [item name]</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>Add to Cart</button>
+            </section>
+        );
+    }
+
+    //TODO: input to give review details and button to submit to DB
+    function ReviewItemPanel() {
+        return (
+            <section style={styles.menuPanel} className="ReviewItem-panel">
+
+                <h2 style={styles.title}>Review [item name]</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}></button>
+            </section>
+        );
+    }
+
+    //TODO: needs to display all items
+    function ViewItemsPanel() {
+        return (
+            <section style={styles.menuPanel} className="ViewItems-panel">
+
+                <h2 style={styles.title}>Currently Listed Items</h2>
+
+            </section>
+        );
+    }
+    //TODO: this is just in case something goes wrong, probably not necessary
+    function FailurePanel() {
+        return (
+            <section style={styles.menuPanel} className="Failure-panel">
+
+            <h2 style={styles.title}>Something went wrong :/</h2>
+            <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Home</button>
+            </section>
+        );
+    }
     function sanitizeInput(input) {
-        const format = /[!@#$%^&*()_+-=[]{};':"\|,.<>/?]+/;
-        return input.replace(format, '');
+        //TODO implement input sanitization logic here
+        return input;
     }
 
     function ClearForm() {
