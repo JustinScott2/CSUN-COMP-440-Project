@@ -197,7 +197,13 @@ const State = {
     login: 1,
     validLogin: 2,
     invalidLogin: 3,
-    createAccount: 4
+    createAccount: 4,
+    listItem: 5, //list new item
+    purchaseItem: 6,
+    reviewItem: 7,
+    viewItems: 8, //view all listed items
+    failurePage: 9 //page in event of any type of error when viewing other pages
+    //TODO: How do we want to view single items?
 }
 
 //form is the funtion that index actually runs
@@ -272,6 +278,46 @@ function Form() {
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
                 {CreateAccountPanel()}
+                </React.Fragment>
+            );
+        break;
+        case State.listItem:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ListItemPanel></ListItemPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.purcahseItem:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <PurchaseItemPanel></PurchaseItemPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.reviewItem:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ReviewItemPanel></ReviewItemPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.viewItems:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ViewItemsPanel></ViewItemsPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.failurePage:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <FailurePanel></FailurePanel>
                 </React.Fragment>
             );
         break;
@@ -362,11 +408,14 @@ function Form() {
     function ValidLoginPanel() {
         return (
             //TODO make a better way of remembering the current user than using userinput.username, which is cleared on every form submission.
+            // TODO ^ This would require cookies
             <section style={styles.menuPanel} className="ValidLogin-panel">
 
-                <h2 style={styles.title}>Logged in as {userInput.username}</h2>
+                <h2 style={styles.title}>This should be changed???Logged in as {userInput.username}</h2>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Return to Menu</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.listItem)}}>List New Item</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.reviewItem)}}>Review an Item</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.viewitems)}}>Browse Items</button>
 
             </section>
         );
@@ -474,6 +523,63 @@ function Form() {
         );
     }
 
+    function ListItemPanel() {
+        return (
+            //TODO: This needs to be a form
+            <section style={styles.menuPanel} className="ListItem-panel">
+
+                <h2 style={styles.title}>List an Item</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}> home </button>
+
+            </section>
+        );
+    }
+
+    //TODO: item purchase tied to each item page
+    function PurchaseItemPanel() {
+        return (
+            <section style={styles.menuPanel} className="PurchaseItem-panel">
+
+                <h2 style={styles.title}>Purchase [item name]</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>Add to Cart</button>
+            </section>
+        );
+    }
+
+    //TODO: input to give review details and button to submit to DB
+    function ReviewItemPanel() {
+        return (
+            <section style={styles.menuPanel} className="ReviewItem-panel">
+
+                <h2 style={styles.title}>Review [item name]</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}></button>
+            </section>
+        );
+    }
+
+    //TODO: needs to display all items
+    function ViewItemsPanel() {
+        return (
+            <section style={styles.menuPanel} className="ViewItems-panel">
+
+                <h2 style={styles.title}>Currently Listed Items</h2>
+
+            </section>
+        );
+    }
+    //TODO: this is just in case something goes wrong, probably not necessary
+    function FailurePanel() {
+        return (
+            <section style={styles.menuPanel} className="Failure-panel">
+
+            <h2 style={styles.title}>Something went wrong :/</h2>
+            <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Home</button>
+            </section>
+        );
+    }
     function sanitizeInput(input) {
         //TODO implement input sanitization logic here
         return input;
