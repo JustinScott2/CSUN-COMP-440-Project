@@ -1,10 +1,7 @@
 class account {
-    static async AddLine(Username, Password, FirstName, LastName, Email, Phone) {
-        console.log("running AddLine");
+    static AddLine(Username, Password, FirstName, LastName, Email, Phone) {
         const salt = await bcrypt.genSalt(5);
-        const secPass = await bcrypt.hash(Password, salt);
-        console.log(secPass);
-        console.log("Adding user: ", Username, secPass, FirstName, LastName, Email, Phone);
+        const secPass = bcrypt.hash(Password, salt);
         const insertStmt = window.db.prepare(
             `INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES (?, ?, ?, ?, ?, ?)`
         );
@@ -22,22 +19,11 @@ class account {
 
     // if userInput.password hashes to the same stored password as the username,
     // then it must be a valid login.
-    static async CheckLogin(Username, Password) {
-        const secPass = await account.getPasswordHash(Username);
-        let isValid;
-        try {
-            isValid = await bcrypt.compare(Password, secPass);
-            console.log(isValid);
-        } catch (error) {
-            isValid = false; 
-            console.log(isValid);
-        }
-        
-        if(isValid){
-            console.log("Valid login " + isValid);
+    static CheckLogin(Username, Password) {
+        const secPass = account.getPasswordHash(username);
+        if(bcrypt.compare(Password,secPass){
             return true;
         } else {
-            console.log("invalid login " + isValid);
             return false;
         }
     }
