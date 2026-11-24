@@ -12,7 +12,6 @@ let userInput = {
     phone: ''
 };
 
-const bcrypt = require('bcrypt');
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
 function pxStringHandler(pxVal, operation) {
@@ -531,8 +530,8 @@ function Form() {
     }
 
     function sanitizeInput(input) {
-        const format = /[!@#$%^&*()_+-=[]{};':"\|,.<>/?]+/;
-        return input.replace(format, '');
+        //TODO implement input sanitization logic here
+        return input;
     }
 
     function ClearForm() {
