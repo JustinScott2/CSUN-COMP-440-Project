@@ -11,7 +11,7 @@ let userInput = {
     email: '',
     phone: ''
 };
-
+//const bcrypt = require('bcrypt');
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
 function pxStringHandler(pxVal, operation) {
@@ -198,11 +198,18 @@ const State = {
     validLogin: 2,
     invalidLogin: 3,
     createAccount: 4,
-    buttonListTest: 5,
-    buttonTestPress: 6
+    testState1: 5,
+    testState2: 6
 }
 
+//#region item functions
+    let itemIDCounter = 0;
 
+    function getNextItemID() {
+        itemIDCounter++;
+        return itemIDCounter;
+    }
+//#endregion
 
 //form is the funtion that index actually runs
 function Form() {
@@ -291,7 +298,7 @@ function Form() {
                 </React.Fragment>
             );
         break;
-        case State.buttonListTest:
+        case State.testState1:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
@@ -299,7 +306,7 @@ function Form() {
                 </React.Fragment>
             );
         break;
-        case State.buttonTestPress:
+        case State.testState2:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
@@ -357,19 +364,17 @@ function Form() {
 
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>create account</button>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.buttonListTest)}}>Button list test</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.testState1)}}>Button list test</button>
             </section>
         );
     }
 
     function ButtonListTestPanel() {
+        let addedItem = items.addProduct("Test Product", "This is a test product description.", "Test Seller", 19.99, ["Category1", "Category2"]);
+        console.log("Added item with ID:", addedItem);
         return (
             <section style={styles.menuPanel} className="button-list-test-panel">
-                {buttonList.map((button) => (
-                    <button key={button.id} style={styles.playButton} onClick={button.onClick}>
-                        {button.label}
-                    </button>
-                ))}
+                <h2 style={styles.title}>added item with ID: {addedItem}</h2>
             </section>
         );
     }
