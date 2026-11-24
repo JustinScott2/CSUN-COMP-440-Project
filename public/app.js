@@ -11,7 +11,7 @@ let userInput = {
     email: '',
     phone: ''
 };
-
+//const bcrypt = require('bcrypt');
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
 function pxStringHandler(pxVal, operation) {
@@ -197,14 +197,37 @@ const State = {
     login: 1,
     validLogin: 2,
     invalidLogin: 3,
-    createAccount: 4
+    createAccount: 4,
+    testState1: 5,
+    testState2: 6
 }
+
+//#region item functions
+    let itemIDCounter = 0;
+
+    function getNextItemID() {
+        itemIDCounter++;
+        return itemIDCounter;
+    }
+//#endregion
 
 //form is the funtion that index actually runs
 function Form() {
-
-    //creates the activeindex variable for controlling the states for the single page
     const [activeIndex, setActiveIndex] = React.useState(State.menu);
+    const [pressedButtonId, setPressedButtonId] = React.useState(null);
+
+    //move this part on actual integration
+    const changePressedButtonId = (newId) => {
+        setPressedButtonId(newId);
+        setActiveIndex(State.buttonTestPress);
+    };
+
+    const buttonList = [
+        { id: 1, label: 'Button 1', onClick: () => {changePressedButtonId(1);} },
+        { id: 2, label: 'Button 2', onClick: () => {changePressedButtonId(2);} },
+        { id: 3, label: 'Button 3', onClick: () => {changePressedButtonId(3);} },
+    ];
+    //creates the activeindex variable for controlling the states for the single page
     const [loginForm, setLoginForm] = React.useState({
         usernameInput: '',
         passwordInput: '',
@@ -275,6 +298,22 @@ function Form() {
                 </React.Fragment>
             );
         break;
+        case State.testState1:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ButtonListTestPanel></ButtonListTestPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.testState2:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ButtonTestPressPanel></ButtonTestPressPanel>
+                </React.Fragment>
+            );
+        break;
         default:
             content = (
                 <React.Fragment>
@@ -324,8 +363,29 @@ function Form() {
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}>Login</button>
 
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>create account</button>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.testState1)}}>Button list test</button>
             </section>
         );
+    }
+
+    function ButtonListTestPanel() {
+        let addedItem = items.addProduct("Test Product", "This is a test product description.", "Test Seller", 19.99, ["Category1", "Category2"]);
+        console.log("Added item with ID:", addedItem);
+        return (
+            <section style={styles.menuPanel} className="button-list-test-panel">
+                <h2 style={styles.title}>added item with ID: {addedItem}</h2>
+            </section>
+        );
+    }
+    function ButtonTestPressPanel() {
+        return (
+            <section style={styles.menuPanel} className="button-test-press-panel">
+                <h2 style={styles.title}>Button {pressedButtonId} Pressed!</h2>               
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Return to Menu</button>
+            </section>
+        );           
     }
 
     function LoginPanel() {
