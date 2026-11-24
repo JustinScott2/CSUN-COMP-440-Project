@@ -6,7 +6,7 @@ class account {
         console.log(secPass);
         console.log("Adding user: ", Username, secPass, FirstName, LastName, Email, Phone);
         const insertStmt = window.db.prepare(
-            `INSERT INTO users (username, password, firstName, lastName, email, phone) VALUES (?, ?, ?, ?, ?, ?)`
+            `INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES (?, ?, ?, ?, ?, ?)`
         );
         insertStmt.run([Username, secPass, FirstName, LastName, Email, Phone]);
         insertStmt.free();
@@ -14,10 +14,10 @@ class account {
 
     //queries database for hashed password related to username
     static getPasswordHash(Username) {
-        const output = window.db.exec(`SELECT * FROM users WHERE username = '${Username}' limit 1`);
-        console.log(output);
-        console.log("Returning: ", output[0].values[0][1]);
-        return output[0].values[0][1];
+        const selectStmt = window.db.prepare(
+            `SELECT 1 FROM Users WHERE username = ? AND password = ?`
+        );
+        return selectStmt.run([Username]);
     }
 
     // if userInput.password hashes to the same stored password as the username,
@@ -44,7 +44,7 @@ class account {
 
     static CheckUniqueKey(Key, Value) { 
         const selectStmt = window.db.prepare(
-            `SELECT 1 FROM users WHERE ${Key} = ?`
+            `SELECT 1 FROM Users WHERE ${Key} = ?`
         );
         selectStmt.bind([Value]);
         const exists = selectStmt.step();
@@ -69,7 +69,7 @@ class account {
         else if(this.CheckUniqueKey("email", Email)){
             return "Email already exists";
         }
-        else if(this.CheckUniqueKey("phone", Phone)){
+        else if(this.CheckUniqueKey("phoneNum", Phone)){
             return "Phone number already exists";
         }
         else{
