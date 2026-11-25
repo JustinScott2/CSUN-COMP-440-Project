@@ -11,6 +11,13 @@ let userInput = {
     email: '',
     phone: ''
 };
+
+let listItemInput = {
+    title: '',
+    description: '',
+    price: '',
+    //Other qualifiers are automatically assigned
+}
 //const bcrypt = require('bcrypt');
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
@@ -246,6 +253,12 @@ function Form() {
         phoneInput: ''
     });
 
+    const [itemForm, setItemForm] = React.useState({
+        title: '',
+        description: '',
+        price: ''
+    });
+
     //#region dropdown menu functions
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -259,6 +272,15 @@ function Form() {
             [name]: value
         }));
     };
+
+    const updateInputForm = (event) => {
+        const {name,value} = event.target;
+
+        setInputForm((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    }
     //#endregion
 
     //content is a variable that holds the content to be returned so it can be passed into appshell once
@@ -473,7 +495,7 @@ function Form() {
             // TODO ^ This would require cookies
             <section style={styles.menuPanel} className="ValidLogin-panel">
 
-                <h2 style={styles.title}>This should be changed???Logged in as {userInput.username}</h2>
+                <h2 style={styles.title}>Logged in as {userInput.username}</h2>
 
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.listItem)}}>List New Item</button>
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.reviewItem)}}>Review an Item</button>
@@ -587,12 +609,26 @@ function Form() {
 
     function ListItemPanel() {
         return (
-            //TODO: This needs to be a form
+            //TODO: fill out form
             <section style={styles.menuPanel} className="ListItem-panel">
-
                 <h2 style={styles.title}>List an Item</h2>
-
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.login)}}> home </button>
+                    <form onSubmit={handleSubmitCreateAccount}>
+                            <h2 style={styles.title}>Create Account</h2>
+                                <section style={{alignItems: 'flex-end', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                                    <label>
+                                        Title: <input
+                                            name="title"
+                                            value={loginForm.usernameInput}
+                                            onChange={updateLoginForm}
+                                        />
+                                    </label>
+                                        <section>   </section>
+                                </section>
+                                <button type="submit" style={styles.playButton}>Create Account</button>
+                            </section>
+                        </form>
+                        
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}> home </button>
 
             </section>
         );
@@ -605,7 +641,7 @@ function Form() {
 
                 <h2 style={styles.title}>Purchase [item name]</h2>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}>Add to Cart</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}>Add to Cart</button>
             </section>
         );
     }
@@ -617,7 +653,7 @@ function Form() {
 
                 <h2 style={styles.title}>Review [item name]</h2>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.createAccount)}}></button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}></button>
             </section>
         );
     }
@@ -713,5 +749,15 @@ function Form() {
         );
         console.log('Create account result:', createAccountSuccess);
         return createAccountSuccess;
+    }
+
+    function handleListItem(e) {
+        let listItemSuccess = item.addProduct(
+            listItemInput.title,
+            listItemInput.description,
+            listItemInput.price
+        );
+        console.log('List item result:', listItemSuccess)
+        return listItemSuccess;
     }
 }
