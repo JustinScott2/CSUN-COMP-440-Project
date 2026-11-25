@@ -13,8 +13,7 @@
         <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
         <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
         <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
-        <script src="https://unpkg.com/bcryptjs@3.0.3/index.js"></script>
-
+        <script src="https://unpkg.com/bcryptjs@3.0.3/umd/index.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
         <script>
             window.dbPromise = initSqlJs({
@@ -25,6 +24,7 @@
                 window.db = new SQL.Database();
                  //tables res ipsa loquitur
                 //TODO delete the table users and use Users2, but rename it to Users, and update references accordingly
+                //        <!--<script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script> -->
                 window.db.run(`
                     CREATE TABLE IF NOT EXISTS Users(
                         username TEXT PRIMARY KEY,
@@ -88,6 +88,7 @@
         </script>
 
         <script src="account.js"></script>
+        <script src="items.js"></script>
         <script type="text/babel" src="app.js"></script>
         <script type="text/babel">
             window.dbPromise

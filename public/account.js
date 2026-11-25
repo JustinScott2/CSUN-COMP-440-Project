@@ -1,29 +1,24 @@
 class account {
     static AddLine(Username, Password, FirstName, LastName, Email, Phone) {
-        const salt = await bcrypt.genSalt(5);
-        const secPass = bcrypt.hash(Password, salt);
         const insertStmt = window.db.prepare(
             `INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES (?, ?, ?, ?, ?, ?)`
         );
-        insertStmt.run([Username, secPass, FirstName, LastName, Email, Phone]);
+        insertStmt.run([Username, Password, FirstName, LastName, Email, Phone]);
         insertStmt.free();
     }
 
-    //queries database for hashed password related to username
-    static getPasswordHash(Username) {
+    static CheckLogin(Username, Password) { 
         const selectStmt = window.db.prepare(
             `SELECT 1 FROM Users WHERE username = ? AND password = ?`
         );
-        return selectStmt.run([Username]);
-    }
+        selectStmt.bind([Username, Password]);
+        const exists = selectStmt.step();
+        selectStmt.free();
 
-    // if userInput.password hashes to the same stored password as the username,
-    // then it must be a valid login.
-    static CheckLogin(Username, Password) {
-        const secPass = account.getPasswordHash(username);
-        if(bcrypt.compare(Password,secPass){
+        if(exists){
             return true;
-        } else {
+        }
+        else{
             return false;
         }
     }
