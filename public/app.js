@@ -273,10 +273,10 @@ function Form() {
         }));
     };
 
-    const updateInputForm = (event) => {
+    const updateItemForm = (event) => {
         const {name,value} = event.target;
 
-        setInputForm((prev) => ({
+        setItemForm((prev) => ({
             ...prev,
             [name]: value
         }));
@@ -332,7 +332,7 @@ function Form() {
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
-                <ListItemPanel></ListItemPanel>
+                {ListItemPanel()}
                 </React.Fragment>
             );
         break;
@@ -610,27 +610,42 @@ function Form() {
     function ListItemPanel() {
         return (
             //TODO: fill out form
-            <section style={styles.menuPanel} className="ListItem-panel">
-                <h2 style={styles.title}>List an Item</h2>
-                    <form onSubmit={handleSubmitCreateAccount}>
-                            <h2 style={styles.title}>Create Account</h2>
-                                <section style={{alignItems: 'flex-end', display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                                    <label>
-                                        Title: <input
-                                            name="title"
-                                            value={loginForm.usernameInput}
-                                            onChange={updateLoginForm}
-                                        />
-                                    </label>
-                                        <section>   </section>
-                                </section>
-                                <button type="submit" style={styles.playButton}>Create Account</button>
-                            </section>
-                        </form>
-                        
+            <form onSubmit={handleListItem}>
+                <section style={styles.menuPanel} className="ListItem-panel">
+                    <h2 style={styles.title}>List an Item</h2>
+                        <section style={{alignItems: 'flex-end', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            <label>
+                                Title: <input
+                                    name="title"
+                                    type="text"
+                                    value={itemForm.usernameInput}
+                                    onChange={updateItemForm}
+                                 />
+                             </label>
+                                <section>   </section>
+                            <label>
+                                Description: <input
+                                    name="description"
+                                    type="text"
+                                    value={itemForm.description}
+                                    onChange={updateItemForm}
+                                />
+                            </label>
+                                <section>   </section>
+                            <label>
+                                Price: <input
+                                    name="price"
+                                    type="number"
+                                    value={itemForm.price}
+                                    onChange={updateItemForm}
+                                />
+                            </label>
+                            <section>   </section>
+                    </section>
+                    <button type="submit" style={styles.playButton}>List Item</button>
                 <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}> home </button>
-
-            </section>
+                    </section>
+                </form>    
         );
     }
 
@@ -753,10 +768,12 @@ function Form() {
 
     function handleListItem(e) {
         let listItemSuccess = item.addProduct(
+            //How do we pull the current user? just store it in a variable?
             listItemInput.title,
             listItemInput.description,
             listItemInput.price
         );
+        //addCategoryToProduct ???
         console.log('List item result:', listItemSuccess)
         return listItemSuccess;
     }
