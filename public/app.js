@@ -538,8 +538,8 @@ function Form() {
     }
 
     function sanitizeInput(input) {
-        //TODO implement input sanitization logic here
-        return input;
+        const format = /[!@#$%^&*()_+-=[]{};':"\|,.<>\/?]+/;
+        return input.replace(format, '');
     }
 
     function ClearForm() {
