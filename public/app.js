@@ -221,7 +221,7 @@ function Form() {
         setPressedButtonId(newId);
         setActiveIndex(State.buttonTestPress);
     };
-
+    //delete this when dynamic button list is implemented, this is just for testing the button press state
     const buttonList = [
         { id: 1, label: 'Button 1', onClick: () => {changePressedButtonId(1);} },
         { id: 2, label: 'Button 2', onClick: () => {changePressedButtonId(2);} },
@@ -370,8 +370,11 @@ function Form() {
     }
 
     function ButtonListTestPanel() {
-        let addedItem = items.addProduct("Test Product", "This is a test product description.", "Test Seller", 19.99, ["Category1", "Category2"]);
-        console.log("Added item with ID:", addedItem);
+        let addedItem = items.addProduct("Test Product 1", "This is a test product description.", "Test Seller", 19.99, ["Category1", "Category2"]);     
+        items.updateProdPrice(addedItem, 24.99); // Update the price of the added ite
+        items.addProduct("Test Product 2", "This is a test product description.", "Test Seller", 9.99, ["Category1", "Category2"]);
+        items.addProduct("Test Product 3", "This is a test product description.", "Test Seller", 14.99, ["Category1", "Category2"]);
+
         return (
             <section style={styles.menuPanel} className="button-list-test-panel">
                 <h2 style={styles.title}>added item with ID: {addedItem}</h2>
@@ -535,8 +538,8 @@ function Form() {
     }
 
     function sanitizeInput(input) {
-        //TODO implement input sanitization logic here
-        return input;
+        const format = /[!@#$%^&*()_+-=[]{};':"\|,.<>\/?]+/;
+        return input.replace(format, '');
     }
 
     function ClearForm() {

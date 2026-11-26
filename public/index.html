@@ -47,7 +47,7 @@
                         title TEXT,
                         description TEXT,
                         seller TEXT,
-                        datePosted DATE,
+                        datePosted TEXT,
                         price INT, --last two values are cents, ie $2.50 is 250
                         FOREIGN KEY (seller) REFERENCES Users(username)
                     );
@@ -58,7 +58,7 @@
                         revTitle TEXT,
                         revText TEXT,
                         rating INT,
-                        datePosted DATE,
+                        datePosted TEXT,
                         FOREIGN KEY (itemID) REFERENCES Products(itemID),
                         FOREIGN KEY (poster) REFERENCES Users(username)
                     );
@@ -78,7 +78,6 @@
 
                 window.db.run('INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES ("RRanom", "Pass", "Justin", "Scott", "Justin.Scott.216@my.cusn.edu", "111-111-1111")');
                 window.db.run('INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES ("Reddd", "Pass", "Riley", "White", "riley.white.387@my.csun.edu", "111-111-1111")');
-                return window.db;
             })
             .catch(err => {
                 console.error('Failed to load sql.js', err);
