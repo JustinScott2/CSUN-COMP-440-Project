@@ -75,7 +75,9 @@
                         FOREIGN KEY (categoryName) REFERENCES CategoryList(categoryName)
                     );  
                 `);
-
+                window.db.run('insert into CategoryList (categoryName) values ("Electronics")');
+                window.db.run('insert into CategoryList (categoryName) values ("Clothing")');
+                window.db.run('insert into CategoryList (categoryName) values ("Food")');
                 window.db.run('INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES ("RRanom", "Pass", "Justin", "Scott", "Justin.Scott.216@my.cusn.edu", "111-111-1111")');
                 window.db.run('INSERT INTO Users (username, password, firstName, lastName, email, phoneNum) VALUES ("Reddd", "Pass", "Riley", "White", "riley.white.387@my.csun.edu", "111-111-1111")');
             })

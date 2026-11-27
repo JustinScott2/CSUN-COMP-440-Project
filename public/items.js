@@ -30,24 +30,16 @@ class items {
 
         //adds the categories to the product
         for (let category of listOfCategories) {
-            items.addCategoryToProduct(itemID, category);
+            if (!items.CheckCatExistance(category)) {
+                console.log(`Category ${category} does not exist, cannot assign to product ${ProductName}.`);
+                continue;
+            }
+            items.assignSingleCategoryToProduct(itemID, category);
         }
 
         // Return the generated itemID
         return itemID; 
-    }
-
-    static addCategoryToProduct(itemID, category) {
-        if (!Number.isInteger(itemID)){
-            console.log("Error: item not added. Cannot add category.");
-            return;
-        }
-        const insertStmt = window.db.prepare(
-            `INSERT INTO CategoryRelations (itemID, categoryName) VALUES (?, ?)`
-        );
-        insertStmt.run([itemID, category]);
-        insertStmt.free();
-    }    
+    }   
 
     static CheckItemIDExistance(id) { 
         const selectStmt = window.db.prepare(
@@ -115,27 +107,34 @@ class items {
             console.log(`Item with itemID ${itemID} does not exist, cannot delete.`);
             return;
         }
+        //deletes the product from the database
         const deleteStmt = window.db.prepare(
             `DELETE FROM Products WHERE itemID = ?`
         );
         deleteStmt.run([itemID]);
         deleteStmt.free();
+
+        //deletes the product from the category relations table
         const deleteStmt2 = window.db.prepare(
             `DELETE FROM CategoryRelations WHERE itemID = ?`
         );
         deleteStmt2.run([itemID]);
         deleteStmt2.free();
+
+        //deletes the product from the reviews table
         const deleteStmt3 = window.db.prepare(
             `DELETE FROM Reviews WHERE itemID = ?`
         );
         deleteStmt3.run([itemID]);
         deleteStmt3.free();
     }
-     /*static CheckUniqueKey(Key, Value) { 
+    
+    //#region Category functions
+    static CheckCatExistance(category) { 
         const selectStmt = window.db.prepare(
-            `SELECT 1 FROM Users WHERE ${Key} = ?`
+            `SELECT 1 FROM CategoryList WHERE categoryName = ?`
         );
-        selectStmt.bind([Value]);
+        selectStmt.bind([category]);
         const exists = selectStmt.step();
         selectStmt.free();
 
@@ -147,25 +146,75 @@ class items {
         }
     }
 
-    static CreateAccount(Username, Password, Password2, FirstName, LastName, Email, Phone) {
-        if (Password !== Password2) {
-            return "Passwords do not match";
+    static assignSingleCategoryToProduct(itemID, category) {
+        const exists = items.CheckCatExistance(category);
+        if (!exists) {
+            console.log(`Category ${category} does not exist, cannot assign to product.`);
+            return;
+        }else if (!Number.isInteger(itemID)){
+            console.log("Error: item not added. Cannot add category.");
+            return;
+        }
+        const insertStmt = window.db.prepare(
+            `INSERT INTO CategoryRelations (itemID, categoryName) VALUES (?, ?)`
+        );
+        insertStmt.run([itemID, category]);
+        insertStmt.free();
+    }
+
+    static assignMultipleCategoriesToProduct(itemID, listOfCategories) {
+        for (let category of listOfCategories) {
+            items.assignSingleCategoryToProduct(itemID, category);
+        }
+    }
+
+    static removeCatProdRelation(itemID, category) {
+        const selectStmt = window.db.prepare(
+            `SELECT 1 FROM CategoryRelations WHERE categoryName = ? AND itemID = ?`
+        );
+        selectStmt.bind([category, itemID]);
+        const exists = selectStmt.step();
+        selectStmt.free();
+
+        if (!exists) {
+            console.log(`${category}+${itemID} pair does not exist, cannot remove.`);
+            return;
         }
 
-        if(this.CheckUniqueKey("username", Username)){
-            return "Username already exists";
+        const deleteStmt = window.db.prepare(
+            `DELETE FROM CategoryRelations WHERE itemID = ? AND categoryName = ?`
+        );
+        deleteStmt.run([itemID, category]);
+        deleteStmt.free();
+    }
+
+    static findProductsByCategory(category) {
+        const selectStmt = window.db.prepare(
+            `SELECT * FROM Products WHERE itemID IN (SELECT itemID FROM CategoryRelations WHERE categoryName = ?)`
+        );
+        selectStmt.bind([category]);
+        const products = [];
+        while (selectStmt.step()) {
+            products.push(selectStmt.getAsObject());
         }
-        else if(this.CheckUniqueKey("email", Email)){
-            return "Email already exists";
+        selectStmt.free();
+        return products;
+    }
+
+    static findCategoriesByProduct(itemID) {
+        const selectStmt = window.db.prepare(
+            `SELECT categoryName FROM CategoryRelations WHERE itemID = ?`
+        );
+        selectStmt.bind([itemID]);
+        const categories = [];
+        while (selectStmt.step()) {
+            categories.push(selectStmt.getAsObject().categoryName);
         }
-        else if(this.CheckUniqueKey("phoneNum", Phone)){
-            return "Phone number already exists";
-        }
-        else{
-            this.AddLine(Username, Password, FirstName, LastName, Email, Phone);
-            return "Account created successfully";
-        }
-    }*/
+        selectStmt.free();
+        return categories;
+    }
+
+    //#endregion 
 }
 window.items = items;
 globalThis.items = items;

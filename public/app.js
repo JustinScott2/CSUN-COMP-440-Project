@@ -440,11 +440,10 @@ function Form() {
     }
 
     function ButtonListTestPanel() {
-        let addedItem = items.addProduct("Test Product 1", "This is a test product description.", "Test Seller", 19.99, ["Category1", "Category2"]);     
+        let addedItem = items.addProduct("Test Product 1", "This is a test product description.", "Test Seller", 19.99, ["Electronics", "Clothing"]);     
         items.updateProdPrice(addedItem, 24.99); // Update the price of the added ite
-        items.addProduct("Test Product 2", "This is a test product description.", "Test Seller", 9.99, ["Category1", "Category2"]);
-        items.addProduct("Test Product 3", "This is a test product description.", "Test Seller", 14.99, ["Category1", "Category2"]);
-
+        items.addProduct("Test Product 2", "This is a test product description.", "Test Seller", 9.99, ["Electronics", "Food"]);
+        items.addProduct("Test Product 3", "This is a test product description.", "Test Seller", 14.99, ["Food", "Clothing"]);
         return (
             <section style={styles.menuPanel} className="button-list-test-panel">
                 <h2 style={styles.title}>added item with ID: {addedItem}</h2>
