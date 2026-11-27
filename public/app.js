@@ -11,6 +11,13 @@ let userInput = {
     email: '',
     phone: ''
 };
+
+let listItemInput = {
+    title: '',
+    description: '',
+    price: '',
+    //Other qualifiers are automatically assigned
+}
 //const bcrypt = require('bcrypt');
 // #region functions-tools
 //performs math operation on NNNpx format strings by unpacking the int, performing the operation, and repacking it.
@@ -198,8 +205,13 @@ const State = {
     validLogin: 2,
     invalidLogin: 3,
     createAccount: 4,
-    testState1: 5,
-    testState2: 6
+    listItem: 5, //list new item
+    purchaseItem: 6,
+    reviewItem: 7,
+    viewItems: 8, //view all listed items
+    failurePage: 9, //page in event of any type of error when viewing other pages
+    testState1: 10,
+    testState2: 11
 }
 
 //#region item functions
@@ -213,8 +225,10 @@ const State = {
 
 //form is the funtion that index actually runs
 function Form() {
+
+    //creates the activeindex variable for controlling the states for the single page
     const [activeIndex, setActiveIndex] = React.useState(State.menu);
-    const [pressedButtonId, setPressedButtonId] = React.useState(null);
+    const [pressedButtonID, setPressedButtonID] = React.useState(null);
 
     //move this part on actual integration
     const changePressedButtonId = (newId) => {
@@ -227,7 +241,8 @@ function Form() {
         { id: 2, label: 'Button 2', onClick: () => {changePressedButtonId(2);} },
         { id: 3, label: 'Button 3', onClick: () => {changePressedButtonId(3);} },
     ];
-    //creates the activeindex variable for controlling the states for the single page
+    
+    
     const [loginForm, setLoginForm] = React.useState({
         usernameInput: '',
         passwordInput: '',
@@ -236,6 +251,12 @@ function Form() {
         lastNameInput: '',
         emailInput: '',
         phoneInput: ''
+    });
+
+    const [itemForm, setItemForm] = React.useState({
+        title: '',
+        description: '',
+        price: ''
     });
 
     //#region dropdown menu functions
@@ -251,6 +272,15 @@ function Form() {
             [name]: value
         }));
     };
+
+    const updateItemForm = (event) => {
+        const {name,value} = event.target;
+
+        setItemForm((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    }
     //#endregion
 
     //content is a variable that holds the content to be returned so it can be passed into appshell once
@@ -298,6 +328,14 @@ function Form() {
                 </React.Fragment>
             );
         break;
+        case State.listItem:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                {ListItemPanel()}
+                </React.Fragment>
+            );
+        break;
         case State.testState1:
             content = (
                 <React.Fragment>
@@ -306,11 +344,43 @@ function Form() {
                 </React.Fragment>
             );
         break;
+        case State.purchaseItem:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <PurchaseItemPanel></PurchaseItemPanel>
+                </React.Fragment>
+            );
+        break;
         case State.testState2:
             content = (
                 <React.Fragment>
                 <ControlPanel></ControlPanel>
                 <ButtonTestPressPanel></ButtonTestPressPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.reviewItem:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ReviewItemPanel></ReviewItemPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.viewItems:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <ViewItemsPanel></ViewItemsPanel>
+                </React.Fragment>
+            );
+        break;
+        case State.failurePage:
+            content = (
+                <React.Fragment>
+                <ControlPanel></ControlPanel>
+                <FailurePanel></FailurePanel>
                 </React.Fragment>
             );
         break;
@@ -425,11 +495,14 @@ function Form() {
     function ValidLoginPanel() {
         return (
             //TODO make a better way of remembering the current user than using userinput.username, which is cleared on every form submission.
+            // TODO ^ This would require cookies
             <section style={styles.menuPanel} className="ValidLogin-panel">
 
                 <h2 style={styles.title}>Logged in as {userInput.username}</h2>
 
-                <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Return to Menu</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.listItem)}}>List New Item</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.reviewItem)}}>Review an Item</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.viewitems)}}>Browse Items</button>
 
             </section>
         );
@@ -537,6 +610,92 @@ function Form() {
         );
     }
 
+    function ListItemPanel() {
+        return (
+            //TODO: fill out form
+            <form onSubmit={handleListItem}>
+                <section style={styles.menuPanel} className="ListItem-panel">
+                    <h2 style={styles.title}>List an Item</h2>
+                        <section style={{alignItems: 'flex-end', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            <label>
+                                Title: <input
+                                    name="title"
+                                    type="text"
+                                    value={itemForm.usernameInput}
+                                    onChange={updateItemForm}
+                                 />
+                             </label>
+                                <section>   </section>
+                            <label>
+                                Description: <input
+                                    name="description"
+                                    type="text"
+                                    value={itemForm.description}
+                                    onChange={updateItemForm}
+                                />
+                            </label>
+                                <section>   </section>
+                            <label>
+                                Price: <input
+                                    name="price"
+                                    type="number"
+                                    value={itemForm.price}
+                                    onChange={updateItemForm}
+                                />
+                            </label>
+                            <section>   </section>
+                    </section>
+                    <button type="submit" style={styles.playButton}>List Item</button>
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}> home </button>
+                    </section>
+                </form>    
+        );
+    }
+
+    //TODO: item purchase tied to each item page
+    function PurchaseItemPanel() {
+        return (
+            <section style={styles.menuPanel} className="PurchaseItem-panel">
+
+                <h2 style={styles.title}>Purchase [item name]</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}>Add to Cart</button>
+            </section>
+        );
+    }
+
+    //TODO: input to give review details and button to submit to DB
+    function ReviewItemPanel() {
+        return (
+            <section style={styles.menuPanel} className="ReviewItem-panel">
+
+                <h2 style={styles.title}>Review [item name]</h2>
+
+                <button style={styles.playButton} onClick={() => {setActiveIndex(State.validLogin)}}></button>
+            </section>
+        );
+    }
+
+    //TODO: needs to display all items
+    function ViewItemsPanel() {
+        return (
+            <section style={styles.menuPanel} className="ViewItems-panel">
+
+                <h2 style={styles.title}>Currently Listed Items</h2>
+
+            </section>
+        );
+    }
+    //TODO: this is just in case something goes wrong, probably not necessary
+    function FailurePanel() {
+        return (
+            <section style={styles.menuPanel} className="Failure-panel">
+
+            <h2 style={styles.title}>Something went wrong :/</h2>
+            <button style={styles.playButton} onClick={() => {setActiveIndex(State.menu)}}>Home</button>
+            </section>
+        );
+    }
     function sanitizeInput(input) {
         const format = /[!@#$%^&*()_+-=[]{};':"\|,.<>\/?]+/;
         return input.replace(format, '');
@@ -586,9 +745,10 @@ function Form() {
         }
     }
 
-    function handleLogin(){
-        let loginSuccess = account.CheckLogin(userInput.username, userInput.password);
-        if(loginSuccess){
+    async function  handleLogin(){
+        let loginSuccess = await account.CheckLogin(userInput.username, userInput.password);
+        console.log('Login success: ', loginSuccess);
+        if(loginSuccess == true){
             setActiveIndex(State.validLogin);
         } else {
             setActiveIndex(State.invalidLogin);
@@ -607,5 +767,17 @@ function Form() {
         );
         console.log('Create account result:', createAccountSuccess);
         return createAccountSuccess;
+    }
+
+    function handleListItem(e) {
+        let listItemSuccess = item.addProduct(
+            //How do we pull the current user? just store it in a variable?
+            listItemInput.title,
+            listItemInput.description,
+            listItemInput.price
+        );
+        //addCategoryToProduct ???
+        console.log('List item result:', listItemSuccess)
+        return listItemSuccess;
     }
 }
