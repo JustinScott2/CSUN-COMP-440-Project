@@ -122,11 +122,7 @@ class items {
         deleteStmt2.free();
 
         //deletes the product from the reviews table
-        const deleteStmt3 = window.db.prepare(
-            `DELETE FROM Reviews WHERE itemID = ?`
-        );
-        deleteStmt3.run([itemID]);
-        deleteStmt3.free();
+        reviews.deleteReviewsByItemID(itemID);
     }
     
     //#region Category functions

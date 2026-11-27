@@ -53,12 +53,13 @@
                     );
 
                     CREATE TABLE IF NOT EXISTS Reviews(
-                        itemID INT PRIMARY KEY,
+                        itemID INT,
                         poster TEXT,
                         revTitle TEXT,
                         revText TEXT,
                         rating INT,
                         datePosted TEXT,
+                        PRIMARY KEY (itemID, poster),
                         FOREIGN KEY (itemID) REFERENCES Products(itemID),
                         FOREIGN KEY (poster) REFERENCES Users(username)
                     );
@@ -89,6 +90,7 @@
 
         <script src="account.js"></script>
         <script src="items.js"></script>
+        <script src="reviews.js"></script>
         <script type="text/babel" src="app.js"></script>
         <script type="text/babel">
             window.dbPromise
